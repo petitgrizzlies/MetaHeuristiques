@@ -1,0 +1,16 @@
+\select@language {french}
+\contentsline {section}{\numberline {1}Le voyageur de commerce}{3}
+\contentsline {section}{\numberline {2}Algorithme}{3}
+\contentsline {subsection}{\numberline {2.1}Recuit simul\IeC {\'e}}{3}
+\contentsline {subsection}{\numberline {2.2}Greedy}{4}
+\contentsline {section}{\numberline {3}Mesures et R\IeC {\'e}sultats}{4}
+\contentsline {subsection}{\numberline {3.1}Cities.dat}{4}
+\contentsline {paragraph}{}{5}
+\contentsline {subsection}{\numberline {3.2}Cities2.dat}{5}
+\contentsline {paragraph}{}{6}
+\contentsline {subsection}{\numberline {3.3}CitiesN.dat}{6}
+\contentsline {subsubsection}{\numberline {3.3.1}Cities50.dat}{7}
+\contentsline {subsubsection}{\numberline {3.3.2}Cities60.dat}{8}
+\contentsline {subsubsection}{\numberline {3.3.3}Cities80.dat}{9}
+\contentsline {subsubsection}{\numberline {3.3.4}Cities100.dat}{10}
+\contentsline {subsubsection}{\numberline {3.3.5}Remarques}{10}

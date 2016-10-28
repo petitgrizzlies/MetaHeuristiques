@@ -1,0 +1,16 @@
+1.dat
+For l= 1		Best = 626.0	mean = 731.28812	std. dev = 39.2576559013
+For l= 0.5	Best = 544.0	mean = 788.65092	std. dev = 43.031624454
+For l= 0.9	Best = 558.0	mean = 811.55036	std. dev = 55.8561665698
+
+40.dat
+For l= 0.5	Best = 18440.0	mean = 19598.156	std. dev = 295.173982024
+
+50.dat
+For l= 0.5	Best = 29958.0	mean = 31371.912	std. dev = 334.404557768
+
+80.dat
+For l= 0.5	Best = 78396.0	mean = 80086.626	std. dev = 533.669916825
+
+100.dat
+For l= 0.5	Best = 122550.0	mean = 124811.564	std. dev = 828.609559385
