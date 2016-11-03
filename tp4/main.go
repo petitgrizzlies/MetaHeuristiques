@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 )
 
 type Ville struct {
@@ -78,8 +79,8 @@ func updatePath(tau [][]float64, delta [][]float64, rho float64) {
 func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 	// first we declare the alpha, beta, tau, rho
 	// delta, etha
-	alpha := 0
-	beta := 1
+	alpha := 1
+	beta := 5
 	rho := 0.1
 	var newM int = m
 
@@ -139,7 +140,6 @@ func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 			}
 			newM--
 		}
-		fmt.Println(t_max)
 		// on met à jour tau
 		updatePath(tau, delta, rho)
 		newM = m
@@ -154,9 +154,24 @@ func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 	return best
 }
 
+func wrapper(file string, t_max int, m int, titre string, out string) {
+	villes := readFile(file)
+	solution := greedy(file)
+	res := ant(t_max, m, villes, norm(solution))
+	plotting(res, titre, "X", "Y", out)
+}
+
 func main() {
-	villes := readFile("cities.dat")
-	solution := greedy("cities.dat")
-	res := ant(100, 500, villes, norm(solution))
-	plotting(res, "Cities.dat with AS", "X", "Y", "citieAnt")
+	fmt.Println("Start:")
+	t_max := 50
+	m := 50
+	t_max_s := strconv.FormatInt(int64(t_max), 10)
+	m_s := strconv.FormatInt(int64(m), 10)
+
+	// wrapper("cities.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt")
+	// wrapper("cities2.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt2")
+	// wrapper("cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt50")
+	// wrapper("cities60.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt60")
+	// wrapper("cities80.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
+	wrapper("cities100.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
 }
