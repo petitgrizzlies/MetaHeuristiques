@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"strconv"
+	// "strconv"
 )
 
 type Ville struct {
@@ -161,17 +161,29 @@ func wrapper(file string, t_max int, m int, titre string, out string) {
 	plotting(res, titre, "X", "Y", out)
 }
 
+func wrapper_ten(file string, t_max int, m int) {
+	villes := readFile(file)
+	solution := greedy(file)
+	res := make([]float64, 10)
+	for index, _ := range res {
+		res[index] = norm(ant(t_max, m, villes, norm(solution)))
+	}
+	fmt.Print(file + "\t->")
+	fmt.Println(res)
+}
+
 func main() {
 	fmt.Println("Start:")
 	t_max := 50
-	m := 50
-	t_max_s := strconv.FormatInt(int64(t_max), 10)
-	m_s := strconv.FormatInt(int64(m), 10)
+	m := 100
+	// t_max_s := strconv.FormatInt(int64(t_max), 10)
+	// m_s := strconv.FormatInt(int64(m), 10)
 
-	// wrapper("cities.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt")
-	// wrapper("cities2.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt2")
+	// wrapper("cities.dat", t_max, 50, "Cities.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt")
+	// wrapper("cities2.dat", t_max, 50, "Cities2.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt2")
 	// wrapper("cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt50")
-	// wrapper("cities60.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt60")
-	// wrapper("cities80.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
-	wrapper("cities100.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
+	// wrapper("cities60.dat", t_max, 50, "Cities60.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt60")
+	// wrapper("cities80.dat", t_max, 50, "Cities80.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
+	// wrapper("cities100.dat", t_max, 50, "Cities100.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
+	wrapper_ten("cities100.dat", t_max, m)
 }
