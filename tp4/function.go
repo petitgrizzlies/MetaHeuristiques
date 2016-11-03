@@ -17,6 +17,24 @@ func check(e error) {
 	}
 }
 
+func mean(vec []float64) float64 {
+	total := 0.0
+	for _, ele := range vec {
+		total += ele
+	}
+	total /= float64(len(vec))
+	return total
+}
+
+func stdDev(vec []float64, mean float64) float64 {
+	total := 0.0
+	for _, ele := range vec {
+		total += math.Pow(ele-mean, 2)
+	}
+	variance := total / float64(len(vec)-1)
+	return math.Sqrt(variance)
+}
+
 /*
 	Given:
 		index: the index of item
