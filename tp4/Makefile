@@ -1,7 +1,7 @@
 CC=go
 Fbuild=build -o
 Frun=run
-Prog=tp4
+Prog=tp4.binary
 
 all: $(Prog)
 
