@@ -1,214 +1,162 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
-	"reflect"
-	"strconv"
-	"time"
-
-	"github.com/gonum/plot"
-	"github.com/gonum/plot/plotter"
-	"github.com/gonum/plot/vg"
-
-	"strings"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
+type Ville struct {
+	index int
+	x, y  float64
+}
+
+func chooseCitie(tau [][]float64, etha [][]float64, alpha int, beta int, copyVilles []Ville, current Ville) (Ville, []Ville) {
+	var prob []float64 = make([]float64, len(copyVilles))
+	var i int = current.index
+	var sum float64 = 0.0
+
+	// on calcule les valeurs de tau[i][j]^alpha * etha[i][j]^beta
+	for index, ville := range copyVilles {
+		prob[index] = math.Pow(tau[i][ville.index], float64(alpha)) * math.Pow(etha[i][ville.index], float64(beta))
+		sum += prob[index]
 	}
-}
 
-func deleteItem(index int, vec [][]float64) [][]float64 {
-	vec[len(vec)-1], vec[index] = vec[index], vec[len(vec)-1]
-	return vec[:len(vec)-1]
-}
+	// on normalise pour avoir des probas
+	for index, _ := range copyVilles {
+		prob[index] /= sum
+	}
 
-func findIndex(item []float64, vec [][]float64) int {
-	for index, ele := range vec {
-		if reflect.DeepEqual(ele, item) {
-			return index
+	// probability denstiy function
+	pcf := prob[0]
+	// pour tout le éléments
+	for index, _ := range prob {
+		// si rand < élément, on le choisit,
+		// si non, on calcule la distribution cumulée
+		if rand.Float64() < pcf {
+			res := copyVilles[index]
+			copyVilles = deleteItem(index, copyVilles)
+
+			return res, copyVilles
+		}
+		if index+1 <= len(prob)+1 {
+			pcf += prob[index+1]
 		}
 	}
-	return -1
+	res := copyVilles[len(prob)-1]
+	copyVilles = deleteItem(len(prob)-1, copyVilles)
+
+	return res, copyVilles
 }
 
-func plotting(vec [][]float64, title string, axeX string, axeY string, name string) {
+func updateDelta(Q float64, solution []Ville, delta [][]float64) {
 
-	plot, err := plot.New()
-	check(err)
+	n := len(solution)
+	L := norm(solution)
 
-	plot.Title.Text = title
-	plot.X.Label.Text = axeX
-	plot.Y.Label.Text = axeY
-	plot.Add(plotter.NewGrid())
-
-	points := convert(vec)
-	lLine, lPoint, err := plotter.NewLinePoints(points)
-
-	plot.Add(lLine, lPoint)
-	plot.Save(15*vg.Centimeter, 15*vg.Centimeter, name+".png")
-}
-
-func convert(vec [][]float64) plotter.XYs {
-	res := make(plotter.XYs, len(vec))
-	for index := range res {
-		res[index].X = vec[index][0]
-		res[index].Y = vec[index][1]
+	for index := 1; index < n; index++ {
+		i := solution[index-1].index
+		j := solution[index].index
+		delta[i][j] += Q / L
 	}
-	return res
+	i := solution[n-1].index
+	j := solution[0].index
+
+	delta[i][j] += Q / L
+
 }
 
-func readFile(file string) [][]float64 {
+func updatePath(tau [][]float64, delta [][]float64, rho float64) {
 
-	// we open the file
-	f, err := os.Open(file)
-	defer f.Close()
-
-	// check the error
-	check(err)
-
-	// init new reader on the opened file
-	r := bufio.NewReader(f)
-
-	var buffer [][]float64 = [][]float64{}
-
-	// do line
-	line, err := r.ReadString('\n')
-	for err == nil {
-		var splitedLine []string = strings.Fields(line)
-
-		n1, _ := strconv.ParseFloat(splitedLine[1], 32)
-		n2, _ := strconv.ParseFloat(splitedLine[2], 32)
-
-		buffer = append(buffer, []float64{n1, n2})
-		line, err = r.ReadString('\n')
-	}
-	return buffer
-}
-
-func closestCitie(cities [][]float64, current []float64) ([][]float64, []float64) {
-	// create the vector with the distance value
-	var tmp []float64 = make([]float64, len(cities))
-
-	// loop for computing the distance
-	for index, citie := range cities {
-		tmp[index] = math.Sqrt(math.Pow(current[0]-citie[0], 2) + math.Pow(current[1]-citie[1], 2))
-	}
-	// loop for find the smallest and his index
-	smallestIndex := 0
-	smallestValue := tmp[0]
-
-	for index, value := range tmp {
-		if smallestValue > value {
-			smallestIndex = index
-			smallestValue = value
-		}
-	}
-	res := cities[smallestIndex]
-	// delete the smallest element
-	cities = deleteItem(smallestIndex, cities)
-	return cities, res
-}
-
-func norm(vec [][]float64) float64 {
-	var res float64 = 0
-	var previous []float64 = vec[0]
-	for _, ele := range vec[1:] {
-		res += math.Sqrt(math.Pow(previous[0]-ele[0], 2) + math.Pow(previous[1]-ele[1], 2))
-		previous = ele
-	}
-	res += math.Sqrt(math.Pow(previous[0]-vec[0][0], 2) + math.Pow(previous[1]-vec[0][1], 2))
-	return res
-}
-
-func greedy(file string) [][]float64 {
-
-	// init the random
-	rand.Seed(time.Now().UTC().UnixNano())
-	// load the cities from file
-	cities := readFile(file)
-
-	// selecte the first random cities
-	var n int = rand.Intn(len(cities))
-	var solution [][]float64 = [][]float64{}
-	solution = append(solution, cities[n])
-
-	cities = deleteItem(n, cities)
-	var next []float64
-
-	// while there is some cities, we choose the closest one and add it
-	for len(cities) > 0 {
-		cities, next = closestCitie(cities, solution[len(solution)-1])
-		solution = append(solution, next)
-	}
-	solution = append(solution, solution[0])
-	return solution
-}
-
-func ant(file string) [][]float64 {
-
-	// init the random
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	// we get the cities
-	var cities [][]float64 = readFile(file)
-
-	// we get the Lnn
-	var L float64 = norm(greedy(file))
-
-	// we define ALL the parameters:
-	// t_max, alpha, beta, rho
-	// m, Q, tau, d, best
-	var t_max int = 1000
-	var alpha int = 1
-	var beta int = 5
-	var rho float64 = 0.1
-	var m int = 100
-	var Q float64 = 1 / L
-	fmt.Println(t_max, alpha, beta, rho, m, Q)
-	var tau [][]float64 = make([][]float64, len(cities))
 	for i, _ := range tau {
-		tau[i] = make([]float64, len(cities))
 		for j, _ := range tau[i] {
-			tau[i][j] = 1 / L
+			tau[i][j] = (1-rho)*tau[i][j] + delta[i][j]
+		}
+	}
+}
+
+func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
+	// first we declare the alpha, beta, tau, rho
+	// delta, etha
+	alpha := 0
+	beta := 1
+	rho := 0.1
+	var newM int = m
+
+	tau := make([][]float64, len(villes))
+	for i, _ := range tau {
+		tau[i] = make([]float64, len(villes))
+		for j, _ := range tau[i] {
+			tau[i][j] = 1 / Q
 		}
 	}
 
-	var d [][]float64 = make([][]float64, len(cities))
-	for i, _ := range d {
-		d[i] = make([]float64, len(cities))
-		for j, _ := range d[i] {
-			d[i][j] = math.Sqrt(math.Pow(cities[i][0]-cities[j][0], 2) + math.Pow(cities[i][1]-cities[j][1], 2))
+	etha := make([][]float64, len(villes))
+	for i, _ := range etha {
+		etha[i] = make([]float64, len(villes))
+		for j, _ := range etha[i] {
+			etha[i][j] = 1 / math.Sqrt(math.Pow(villes[i].x-villes[j].x, 2)+math.Pow(villes[i].y-villes[j].y, 2))
+		}
+		etha[i][i] = 0
+	}
+
+	delta := make([][]float64, len(villes))
+	for i, _ := range delta {
+		delta[i] = make([]float64, len(villes))
+		for j, _ := range delta[i] {
+			delta[i][j] = 0
 		}
 	}
 
-	var best [][]float64 = [][]float64{}
-	fmt.Println(best)
+	var best []Ville = villes
 
-	//	// the algo loop
-	//	for t_max > 0 {
-	//		for m > 0 {
-	//			// copy the cities
-	//			copy_cities = copy(cities)
-	//			// init the solution
-	//			var solution [][]float64 = make([][]float64, 0, len(cities))
-	//			// choose a random cities
-	//			n = rand.Int31n(len(copy_cities))
-	//			solution = append(solution, copy_cities[n])
-	//		}
-	//	}
+	for t_max > 0 {
+		for newM > 0 {
+			// on crée une copie des villes
+			var copyVilles []Ville = make([]Ville, len(villes))
+			copy(copyVilles[:], villes)
+			// on crée la solution
+			var solution []Ville = make([]Ville, len(villes))
+			var i int = 0
 
-	return tau
+			// on choisit le première ville
+			// et on supprime l'élément de la copie
+			var index int = int(math.Mod(float64(m), float64(len(villes))))
+			solution[i] = copyVilles[index]
+			copyVilles = deleteItem(index, copyVilles)
+			i++
+
+			for len(copyVilles) > 0 {
+				// on choisit la ville
+				solution[i], copyVilles = chooseCitie(tau, etha, alpha, beta, copyVilles, solution[i-1])
+				i++
+			}
+			// on met à jour les phéromones
+			updateDelta(Q, solution, delta)
+			// on met à jour le best si il est meilleur que le courrant
+			if norm(best) > norm(solution) {
+				best = solution
+			}
+			newM--
+		}
+		fmt.Println(t_max)
+		// on met à jour tau
+		updatePath(tau, delta, rho)
+		newM = m
+		t_max--
+		// on met delta a 0 pour la nouvelle itération
+		for ii, _ := range delta {
+			for jj, _ := range delta[ii] {
+				delta[ii][jj] = 0.0
+			}
+		}
+	}
+	return best
 }
 
 func main() {
-
-	ant("cities.dat")
-	fmt.Println("Hello World\n")
-
+	villes := readFile("cities.dat")
+	solution := greedy("cities.dat")
+	res := ant(100, 500, villes, norm(solution))
+	plotting(res, "Cities.dat with AS", "X", "Y", "citieAnt")
 }
