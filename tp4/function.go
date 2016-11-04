@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func check(e error) {
@@ -46,6 +47,22 @@ func stdDev(vec []float64, mean float64) float64 {
 func deleteItem(index int, vec []Ville) []Ville {
 	vec[len(vec)-1], vec[index] = vec[index], vec[len(vec)-1]
 	return vec[:len(vec)-1]
+}
+
+func barring(numbers []float64, title string, name string) {
+	plot, err := plot.New()
+	check(err)
+	groupeA := make(plotter.Values, len(numbers))
+	for i := range groupeA {
+		groupeA[i] = numbers[i]
+	}
+	h, _ := plotter.NewHist(groupeA, 16)
+	plot.X.Label.Text = "Energie"
+	plot.Y.Label.Text = "Occurences"
+
+	plot.Add(h)
+
+	plot.Save(15*vg.Centimeter, 15*vg.Centimeter, name+".png")
 }
 
 /*
@@ -132,4 +149,38 @@ func norm(vec []Ville) float64 {
 	}
 	res += math.Sqrt(math.Pow(previous.x-vec[0].x, 2) + math.Pow(previous.y-vec[0].y, 2))
 	return res
+}
+
+// function pour la version parallèle, mais donne de moins bon résultat
+func iteration(tau *[][]float64, villes []Ville, m int, etha [][]float64, alpha int, beta int, Q float64, delta *[][]float64, best *[]Ville, l *sync.Mutex, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// on crée une copie des villes
+	var copyVilles []Ville = make([]Ville, len(villes))
+	copy(copyVilles[:], villes)
+	// on crée la solution
+	var solution []Ville = make([]Ville, len(villes))
+	var i int = 0
+
+	// on choisit le première ville
+	// et on supprime l'élément de la copie
+	var index int = int(math.Mod(float64(m), float64(len(villes))))
+	solution[i] = copyVilles[index]
+	copyVilles = deleteItem(index, copyVilles)
+	i++
+
+	for len(copyVilles) > 0 {
+		// on choisit la ville
+		solution[i], copyVilles = chooseCitie(*tau, etha, alpha, beta, copyVilles, solution[i-1])
+		i++
+	}
+	// on met à jour les phéromones
+	l.Lock()
+	updateDelta(Q, solution, *delta)
+	l.Unlock()
+	// on met à jour le best si il est meilleur que le courrant
+	if norm(*best) > norm(solution) {
+		l.Lock()
+		*best = solution
+		l.Unlock()
+	}
 }

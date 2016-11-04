@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	// "strconv"
+	"sync"
 )
 
 type Ville struct {
@@ -110,36 +111,43 @@ func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 	}
 
 	var best []Ville = villes
+	l := sync.Mutex{}
 
 	for t_max > 0 {
+		var vg sync.WaitGroup
+
+		vg.Add(newM)
 		for newM > 0 {
-			// on crée une copie des villes
-			var copyVilles []Ville = make([]Ville, len(villes))
-			copy(copyVilles[:], villes)
-			// on crée la solution
-			var solution []Ville = make([]Ville, len(villes))
-			var i int = 0
-
-			// on choisit le première ville
-			// et on supprime l'élément de la copie
-			var index int = int(math.Mod(float64(m), float64(len(villes))))
-			solution[i] = copyVilles[index]
-			copyVilles = deleteItem(index, copyVilles)
-			i++
-
-			for len(copyVilles) > 0 {
-				// on choisit la ville
-				solution[i], copyVilles = chooseCitie(tau, etha, alpha, beta, copyVilles, solution[i-1])
-				i++
-			}
-			// on met à jour les phéromones
-			updateDelta(Q, solution, delta)
-			// on met à jour le best si il est meilleur que le courrant
-			if norm(best) > norm(solution) {
-				best = solution
-			}
+			// // on crée une copie des villes
+			// var copyVilles []Ville = make([]Ville, len(villes))
+			// copy(copyVilles[:], villes)
+			// // on crée la solution
+			// var solution []Ville = make([]Ville, len(villes))
+			// var i int = 0
+			//
+			// // on choisit le première ville
+			// // et on supprime l'élément de la copie
+			// var index int = int(math.Mod(float64(m), float64(len(villes))))
+			// solution[i] = copyVilles[index]
+			// copyVilles = deleteItem(index, copyVilles)
+			// i++
+			//
+			// for len(copyVilles) > 0 {
+			// 	// on choisit la ville
+			// 	solution[i], copyVilles = chooseCitie(tau, etha, alpha, beta, copyVilles, solution[i-1])
+			// 	i++
+			// }
+			// // on met à jour les phéromones
+			// updateDelta(Q, solution, delta)
+			// // on met à jour le best si il est meilleur que le courrant
+			// if norm(best) > norm(solution) {
+			// 	best = solution
+			// }
+			// version parallèle, donne des moins bonnes fitness, mais plus rapide
+			go iteration(&tau, villes, newM, etha, alpha, beta, Q, &delta, &best, &l, &vg)
 			newM--
 		}
+		vg.Wait()
 		// on met à jour tau
 		updatePath(tau, delta, rho)
 		newM = m
@@ -168,6 +176,8 @@ func wrapper_ten(file string, t_max int, m int) {
 	for index, _ := range res {
 		res[index] = norm(ant(t_max, m, villes, norm(solution)))
 	}
+	barring(res, file+" with AS", file)
+
 	fmt.Print(file + "\t-> mean = ")
 	fmt.Print(mean(res))
 	fmt.Print("  std = ")
@@ -183,9 +193,16 @@ func main() {
 
 	// wrapper("cities.dat", t_max, 50, "Cities.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt")
 	// wrapper("cities2.dat", t_max, 50, "Cities2.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt2")
+	// wrapper("./voyageur50.dat", t_max, 50, "Cities2.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "tmp")
 	// wrapper("cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt50")
 	// wrapper("cities60.dat", t_max, 50, "Cities60.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt60")
 	// wrapper("cities80.dat", t_max, 50, "Cities80.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
-	// wrapper("cities100.dat", t_max, 50, "Cities100.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
+	// wrapper("cities100.dat", t_max, 100, "Cities100.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
+	// wrapper_ten("cities.dat", 50, 17)
+	// wrapper_ten("./voyageur50.dat", t_max, 50)
 	wrapper_ten("cities2.dat", t_max, m)
+	// wrapper_ten("cities50.dat", t_max, 50)
+	// wrapper_ten("cities60.dat", t_max, 60)
+	// wrapper_ten("cities80.dat", t_max, 80)
+	// wrapper_ten("cities100.dat", t_max, 100)
 }
