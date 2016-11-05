@@ -77,7 +77,85 @@ func updatePath(tau [][]float64, delta [][]float64, rho float64) {
 	}
 }
 
-func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
+func antSequentiel(t_max int, m int, villes []Ville, Q float64) []Ville {
+	// first we declare the alpha, beta, tau, rho
+	// delta, etha
+	alpha := 1
+	beta := 5
+	rho := 0.1
+	var newM int = m
+
+	tau := make([][]float64, len(villes))
+	for i, _ := range tau {
+		tau[i] = make([]float64, len(villes))
+		for j, _ := range tau[i] {
+			tau[i][j] = 1 / Q
+		}
+	}
+
+	etha := make([][]float64, len(villes))
+	for i, _ := range etha {
+		etha[i] = make([]float64, len(villes))
+		for j, _ := range etha[i] {
+			etha[i][j] = 1 / math.Sqrt(math.Pow(villes[i].x-villes[j].x, 2)+math.Pow(villes[i].y-villes[j].y, 2))
+		}
+		etha[i][i] = 0
+	}
+
+	delta := make([][]float64, len(villes))
+	for i, _ := range delta {
+		delta[i] = make([]float64, len(villes))
+		for j, _ := range delta[i] {
+			delta[i][j] = 0
+		}
+	}
+
+	var best []Ville = villes
+
+	for t_max > 0 {
+		for newM > 0 {
+			// on crée une copie des villes
+			var copyVilles []Ville = make([]Ville, len(villes))
+			copy(copyVilles[:], villes)
+			// on crée la solution
+			var solution []Ville = make([]Ville, len(villes))
+			var i int = 0
+
+			// on choisit le première ville
+			// et on supprime l'élément de la copie
+			var index int = int(math.Mod(float64(m), float64(len(villes))))
+			solution[i] = copyVilles[index]
+			copyVilles = deleteItem(index, copyVilles)
+			i++
+
+			for len(copyVilles) > 0 {
+				// on choisit la ville
+				solution[i], copyVilles = chooseCitie(tau, etha, alpha, beta, copyVilles, solution[i-1])
+				i++
+			}
+			// on met à jour les phéromones
+			updateDelta(Q, solution, delta)
+			// on met à jour le best si il est meilleur que le courrant
+			if norm(best) > norm(solution) {
+				best = solution
+			}
+			newM--
+		}
+		// on met à jour tau
+		updatePath(tau, delta, rho)
+		newM = m
+		t_max--
+		// on met delta a 0 pour la nouvelle itération
+		for ii, _ := range delta {
+			for jj, _ := range delta[ii] {
+				delta[ii][jj] = 0.0
+			}
+		}
+	}
+	return best
+}
+
+func antParallel(t_max int, m int, villes []Ville, Q float64) []Ville {
 	// first we declare the alpha, beta, tau, rho
 	// delta, etha
 	alpha := 1
@@ -118,32 +196,6 @@ func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 
 		vg.Add(newM)
 		for newM > 0 {
-			// // on crée une copie des villes
-			// var copyVilles []Ville = make([]Ville, len(villes))
-			// copy(copyVilles[:], villes)
-			// // on crée la solution
-			// var solution []Ville = make([]Ville, len(villes))
-			// var i int = 0
-			//
-			// // on choisit le première ville
-			// // et on supprime l'élément de la copie
-			// var index int = int(math.Mod(float64(m), float64(len(villes))))
-			// solution[i] = copyVilles[index]
-			// copyVilles = deleteItem(index, copyVilles)
-			// i++
-			//
-			// for len(copyVilles) > 0 {
-			// 	// on choisit la ville
-			// 	solution[i], copyVilles = chooseCitie(tau, etha, alpha, beta, copyVilles, solution[i-1])
-			// 	i++
-			// }
-			// // on met à jour les phéromones
-			// updateDelta(Q, solution, delta)
-			// // on met à jour le best si il est meilleur que le courrant
-			// if norm(best) > norm(solution) {
-			// 	best = solution
-			// }
-			// version parallèle, donne des moins bonnes fitness, mais plus rapide
 			go iteration(&tau, villes, newM, etha, alpha, beta, Q, &delta, &best, &l, &vg)
 			newM--
 		}
@@ -162,19 +214,34 @@ func ant(t_max int, m int, villes []Ville, Q float64) []Ville {
 	return best
 }
 
-func wrapper(file string, t_max int, m int, titre string, out string) {
+func wrapper(file string, t_max int, m int, titre string, out string, version string) {
 	villes := readFile(file)
 	solution := greedy(file)
-	res := ant(t_max, m, villes, norm(solution))
-	plotting(res, titre, "X", "Y", out)
+	if version == "sequentiel" {
+		res := antSequentiel(t_max, m, villes, norm(solution))
+		plotting(res, titre, "X", "Y", out)
+
+	} else if version == "parallel" {
+		res := antParallel(t_max, m, villes, norm(solution))
+		plotting(res, titre, "X", "Y", out)
+
+	} else {
+		fmt.Println("Error")
+	}
 }
 
-func wrapper_ten(file string, t_max int, m int) {
+func wrapper_ten(file string, t_max int, m int, version string) {
 	villes := readFile(file)
 	solution := greedy(file)
 	res := make([]float64, 10)
-	for index, _ := range res {
-		res[index] = norm(ant(t_max, m, villes, norm(solution)))
+	if version == "sequentiel" {
+		for index, _ := range res {
+			res[index] = norm(antSequentiel(t_max, m, villes, norm(solution)))
+		}
+	} else if version == "parallel" {
+		for index, _ := range res {
+			res[index] = norm(antParallel(t_max, m, villes, norm(solution)))
+		}
 	}
 	barring(res, file+" with AS", file)
 
@@ -199,10 +266,11 @@ func main() {
 	// wrapper("cities80.dat", t_max, 50, "Cities80.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
 	// wrapper("cities100.dat", t_max, 100, "Cities100.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
 	// wrapper_ten("cities.dat", 50, 17)
-	// wrapper_ten("./voyageur50.dat", t_max, 50)
-	wrapper_ten("cities2.dat", t_max, m)
-	// wrapper_ten("cities50.dat", t_max, 50)
-	// wrapper_ten("cities60.dat", t_max, 60)
-	// wrapper_ten("cities80.dat", t_max, 80)
-	// wrapper_ten("cities100.dat", t_max, 100)
+	// wrapper_ten("./voyageur50.dat", 5*t_max, 50, "parallel")
+	wrapper_ten("cities.dat", 5*t_max, 17, "parallel")
+	wrapper_ten("cities2.dat", 5*t_max, m, "parallel")
+	wrapper_ten("cities50.dat", 5*t_max, 50, "parallel")
+	wrapper_ten("cities60.dat", 5*t_max, 60, "parallel")
+	wrapper_ten("cities80.dat", 5*t_max, 80, "parallel")
+	wrapper_ten("cities100.dat", 5*t_max, 100, "parallel")
 }
