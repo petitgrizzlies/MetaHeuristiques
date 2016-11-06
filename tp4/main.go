@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	// "strconv"
+	"strconv"
 	"sync"
 )
 
@@ -160,7 +160,7 @@ func antParallel(t_max int, m int, villes []Ville, Q float64) []Ville {
 	// delta, etha
 	alpha := 1
 	beta := 5
-	rho := 0.1
+	rho := 0.9
 	var newM int = m
 
 	tau := make([][]float64, len(villes))
@@ -233,7 +233,7 @@ func wrapper(file string, t_max int, m int, titre string, out string, version st
 func wrapper_ten(file string, t_max int, m int, version string) {
 	villes := readFile(file)
 	solution := greedy(file)
-	res := make([]float64, 10)
+	res := make([]float64, 20)
 	if version == "sequentiel" {
 		for index, _ := range res {
 			res[index] = norm(antSequentiel(t_max, m, villes, norm(solution)))
@@ -241,6 +241,7 @@ func wrapper_ten(file string, t_max int, m int, version string) {
 	} else if version == "parallel" {
 		for index, _ := range res {
 			res[index] = norm(antParallel(t_max, m, villes, norm(solution)))
+			barring(res, file+" with AS parallel\nt_max = "+change(t_max)+"\nm = "+change(m), file)
 		}
 	}
 	barring(res, file+" with AS", file)
@@ -251,26 +252,25 @@ func wrapper_ten(file string, t_max int, m int, version string) {
 	fmt.Println(stdDev(res, mean(res)))
 }
 
+func change(number int) string {
+	return strconv.FormatInt(int64(number), 10)
+}
+
 func main() {
 	fmt.Println("Start:")
-	t_max := 50
-	m := 49
-	// t_max_s := strconv.FormatInt(int64(t_max), 10)
-	// m_s := strconv.FormatInt(int64(m), 10)
+	t_max := 100
 
-	// wrapper("cities.dat", t_max, 50, "Cities.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt")
-	// wrapper("cities2.dat", t_max, 50, "Cities2.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt2")
-	// wrapper("./voyageur50.dat", t_max, 50, "Cities2.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "tmp")
-	// wrapper("cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt50")
-	// wrapper("cities60.dat", t_max, 50, "Cities60.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt60")
-	// wrapper("cities80.dat", t_max, 50, "Cities80.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt80")
-	// wrapper("cities100.dat", t_max, 100, "Cities100.dat with AS\n"+"t_max = "+t_max_s+"\nm = "+m_s, "citieAnt100")
-	// wrapper_ten("cities.dat", 50, 17)
-	// wrapper_ten("./voyageur50.dat", 5*t_max, 50, "parallel")
-	wrapper_ten("cities.dat", 5*t_max, 17, "parallel")
-	wrapper_ten("cities2.dat", 5*t_max, m, "parallel")
-	wrapper_ten("cities50.dat", 5*t_max, 50, "parallel")
-	wrapper_ten("cities60.dat", 5*t_max, 60, "parallel")
-	wrapper_ten("cities80.dat", 5*t_max, 80, "parallel")
-	wrapper_ten("cities100.dat", 5*t_max, 100, "parallel")
+	// wrapper("./data/cities.dat", t_max, 17, "Cities.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(17), "citieAnt", "parallel")
+	// wrapper("./data/cities2.dat", t_max, 49, "Cities2.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(49), "citieAnt2", "parallel")
+	// wrapper("./data/cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(50), "citieAnt50", "parallel")
+	// wrapper("./data/cities60.dat", t_max, 60, "Cities60.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(60), "citieAnt60", "parallel")
+	// wrapper("./data/cities80.dat", t_max, 80, "Cities80.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(80), "citieAnt80", "parallel")
+	// wrapper("./data/cities100.dat", t_max, 100, "Cities100.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(100), "citieAnt100", "parallel")
+
+	// wrapper_ten("./data/cities.dat", t_max, 17, "parallel")
+	// wrapper_ten("./data/cities2.dat", t_max, 49, "parallel")
+	// wrapper_ten("./data/cities50.dat", t_max, 50, "parallel")
+	wrapper_ten("./data/cities60.dat", t_max, 60, "parallel")
+	// wrapper_ten("./data/cities80.dat", t_max, 80, "parallel")
+	// wrapper_ten("./data/cities100.dat", t_max, 100, "parallel")
 }
