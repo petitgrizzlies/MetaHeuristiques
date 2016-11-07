@@ -1,0 +1,166 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[francais]{babel} 
+\usepackage{amsmath} % pour les formules de maths
+\usepackage{amssymb} % pour des symboles
+\usepackage{mathrsfs} % pour avoir acces a des jolies lettres calligrafiées. :)
+\usepackage{listings} % pour le code source
+\usepackage{color} % pour les couleurs
+\usepackage{graphicx} % pour les graphiques (images)
+\usepackage{fancyhdr} % pour utiliser le pagestyle fancy
+\usepackage[headheight=14pt]{geometry} % pour les marges
+
+\geometry{hmargin=3cm}
+
+\title{Metaheuristics for Optimization\\Series 4: Ant System and Traveling Salesman Problem}
+\author{Romain Mencattini}
+\date{\today}
+
+\pagestyle{fancy} % pour avoir des entetes et des pieds de page
+\renewcommand\headrulewidth{0.6pt}
+\fancyhead[L]{Romain Mencattini} % haut de page gauche
+\fancyhead[R]{Université de Genève \today} % haut de page droite
+
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Le voyageur de commerce}
+Il s'agit du problème sur lequel nous allons tester l'algorithme du recuit simulé.\\
+Détaillons le de manière mathématique.\\
+Nous avons un ensemble de villes : $V$. Où $v = \{x,y\} \in V$. est une ville qui avec une coordonnée $x$ et une coordonnée $y$ qui appratiennent 
+à $\mathbb{N}$.
+
+On veut visiter toutes les villes, une et une seule fois. Notre résultat sera une permutation de ces villes: $[v_1,v_2,...,v_N]$.
+Une liste avec $N$ villes. Où $v_1$ 
+sera la première ville visitée, $v_2$ la deuxième etc.
+
+On utilise la distance euclidienne :
+\begin{center}
+\begin{math}
+ euclidienne(v_1,v_2) = \sqrt{(v_{1_x} - v_{2_x})^2 + (v_{1_y} - v_{2_y})^2}
+\end{math} 
+\end{center}
+
+On veut minimiser la distance totale qui est:
+\begin{center}
+ \begin{math}
+  d_{total} = \sum\limits_{i=2}^{N} euclidienne(v_{i-1},v_i)
+ \end{math}
+\end{center}
+
+\section{Algorithme}
+
+Pour ce faire nous allons comparer plusieurs méthodes:
+\begin{itemize}
+ \item Greedy
+ \item Ant System séquentiel
+ \item Ant System parallèle
+\end{itemize}
+
+\subsection{Greedy}
+\subsubsection{Algorithme}
+L'algorithme est relativement simple. C'est le même que celui programmé dans le tp3.
+Il faut:
+\begin{enumerate}
+ \item Choisir une ville aléatoire, $v_0$.
+ \item Ajouter la ville la plus prochaine à notre solution.
+ \item Répéter l'étape 2. jusqu'à ce qu'on ait vue toutes les viles.
+\end{enumerate}
+
+Suivant le choix du développeur, on peut choisir d'ajouter la première ville, à la fin pour avoir une boucle.
+Cet algorithme est totalement déterministe pour un $V$ fixé et une ville initiale $v_0$ fixée.
+
+\subsubsection{Mesures}
+Voici les résultats obtenus en moyenne lors de vingt lancés:
+\paragraph{}
+\begin{tabular}{|l | c |c |}
+\hline
+ File & Mean & Std \\
+\hline
+./data/cities.dat	& 31.537453312384304  & 1.8045784058777552\\
+\hline
+./data/cities2.dat	& 3.387658063949946  & 0.2163689591198703\\
+\hline
+./data/cities50.dat	& 6.278780156847236  & 2.332163876429746e-15\\
+\hline
+./data/cities60.dat	& 6.302401870939252  & 0.047031657572111\\
+\hline
+./data/cities80.dat	& 6.2813443585626185  & 1.2394364910839084e-15\\
+\hline
+./data/cities100.dat	& 6.282070156684796  & 1.8110771949088597e-15\\
+\hline
+\end{tabular}
+\paragraph{}
+On remarque que l'algorithme trouve toujours la solution optimale pour le cercle. Ce qui est évident. En prenant le plus proche voisins,
+on trouve notre point à gauche (ou à droite), et ainsi de suite jusqu'à faire le tour du cercle.
+Il y a une déviation standard assez importante pour les deux premiers fichiers. Cela vient du faire que l'agorithme est déterministe, donc
+il dépend du point de départ. Ce qui n'est pas le cas des algorithmes fourmis.
+
+\subsection{Ant System Séquentiel}
+Les deux versions de cet algorithme (séquentielle et parallèle) sont très proches, nous allons donc expliquer en premier lieu 
+la version séquentielle plus parallèle.
+
+\subsubsection{Algorithme}
+Voici le déroulement de l'algorithme:
+\begin{enumerate}
+ \item on choisit une ville $v_0$ de départ pour la fourmis.
+ \item tant qu'il existe des villes non visitées, on en choisit une $v_i$ et on l'ajoute.
+ \item marquer le chemin.
+\end{enumerate}
+
+On répète cela pour chacune des $m$ fourmis. Cela correspond à une itération.
+Une fois l'itération terminée, on met à jour la matrice des phéromones et on reprend les itérations jusqu'à en avoir exécuté $t_{max}$.
+
+Nous allons maintenant expliquer les points cités.
+Pour le choix de la fourmis, nous les avons répartis une par ville, (en utilisatn le modulo). Il faut donc que $n$ le nombre de villes, 
+soit égal à $m$ le nombre de fourmis. C'est dans ces conditions que les meilleurs résultats sont atteints.
+
+Pour choisir parmis les villes, nous générons un tableau de probabilités (associée une probabilité à chaque ville),et nous choisissons 
+la ville suivante en suivant ces probabilité.
+Voici comme elles sont générées:
+ \begin{center}
+  \begin{displaymath}
+    p_{ij}^k(t) = 
+    \left\lbrace
+      \begin{array}{ll}
+	\frac{(\tau_{ij}(t))^{\alpha} (\eta_{ij})^{\beta}}{\sum_{l \in J} (\tau_{ij}(t))^{\alpha} (\eta_{ij})^{\beta}} & \text{si } 
+	j \in J \\
+	0 & \text{sinon } \\
+      \end{array}
+    \right.
+\end{displaymath}
+ \end{center}
+
+Avec $k$, la $k^{\text{ième}}$ fourmis, $i$ la ville $i$, $j$ la ville $j$, et $\alpha$,$\beta$ des paramètres, et $t$ l'itération courrante.
+On va donc favoriser avec $\tau$ les chemins avec beaucoup de phéromones; et avec $\eta$ les villes les plus proches.
+Où $\tau$ est la matrice des phéromones, et $\eta$ la matrice de l'inverse des distances entre villes. Donc $\eta_{ij} = \frac{1}{d_{ij}}$
+
+Chaque fourmis va marquer le chemin de cette manière:
+ \begin{center}
+  \begin{displaymath}
+    \Delta\tau_{ij}^k(t) = 
+    \left\lbrace
+      \begin{array}{ll}
+	\frac{Q}{L^k(t)} & \text{si la fourmis } k \text{utilise l'arc} (i,j) \text{dans son parcour}\\
+	0 & \text{sinon } \\
+      \end{array}
+    \right.
+\end{displaymath}
+ \end{center}
+
+ Où $Q$ est un paramètre. $L^k(t)$ est la longueur du chemine de la fourmis $k$ à l'itération $t$.
+Mettre à jour la matrice des phéromones, soit $\tau$, se fait comme suit:
+\begin{center}
+ \begin{math}
+  \tau_{ij}(t+1) = (1-\rho)\tau_{ij}(t) + \sum\limits_{k=1}^{m} \Delta\tau_{ij}^k(t)
+ \end{math}
+\end{center}
+
+\subsubsection{Mesures}
+
+\end{document}
