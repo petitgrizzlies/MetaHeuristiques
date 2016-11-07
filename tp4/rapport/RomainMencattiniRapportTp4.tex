@@ -98,7 +98,7 @@ Voici les résultats obtenus en moyenne lors de vingt lancés:
 \paragraph{}
 On remarque que l'algorithme trouve toujours la solution optimale pour le cercle. Ce qui est évident. En prenant le plus proche voisins,
 on trouve notre point à gauche (ou à droite), et ainsi de suite jusqu'à faire le tour du cercle.
-Il y a une déviation standard assez importante pour les deux premiers fichiers. Cela vient du faire que l'agorithme est déterministe, donc
+Il y a une déviation standard assez importante pour les deux premiers fichiers. Cela vient du faire que l'algorithme est déterministe, donc
 il dépend du point de départ. Ce qui n'est pas le cas des algorithmes fourmis.
 
 \subsection{Ant System Séquentiel}
@@ -117,7 +117,7 @@ On répète cela pour chacune des $m$ fourmis. Cela correspond à une itération
 Une fois l'itération terminée, on met à jour la matrice des phéromones et on reprend les itérations jusqu'à en avoir exécuté $t_{max}$.
 
 Nous allons maintenant expliquer les points cités.
-Pour le choix de la fourmis, nous les avons répartis une par ville, (en utilisatn le modulo). Il faut donc que $n$ le nombre de villes, 
+Pour le choix de la fourmis, nous les avons répartis une par ville, (en utilisant le modulo). Il faut donc que $n$ le nombre de villes, 
 soit égal à $m$ le nombre de fourmis. C'est dans ces conditions que les meilleurs résultats sont atteints.
 
 Pour choisir parmis les villes, nous générons un tableau de probabilités (associée une probabilité à chaque ville),et nous choisissons 
@@ -162,5 +162,89 @@ Mettre à jour la matrice des phéromones, soit $\tau$, se fait comme suit:
 \end{center}
 
 \subsubsection{Mesures}
+Pour la version séquentielle, voici les résultats, avec $t_{max} = 50$ et $\rho = 0.1$, toujours vingts itérations:
+\paragraph{}
+\begin{tabular}{|l|c|c|}
+ \hline
+ File & Mean & Std\\
+ \hline
+cities.dat	& 27.86711241242947  & 0.7484163226353873 \\
+ \hline
+ cities2.dat	& 3.0318633694064667  & 0.04990194967224049\\
+ \hline
+cities50.dat	& 6.3283035636850675  & 0\\
+ \hline
+cities60.dat	& 6.2759356854396  & 0\\
+ \hline
+cities80.dat	& 6.348320460878663  & 0.007431478876196535\\
+ \hline
+cities100.dat	& 6.282070156684795  & 9.362222582871203e-16\\
+ \hline
+\end{tabular}
 
+\paragraph{}
+On remarque que les résultats sont meilleurs que le Greedy. Ce qui est une bonne chose. L'AS trouve le maximum global du cercle, et fait 
+de meilleurs résultats pour \textit{cities.dat} et \textit{cities2.dat}.
+
+\subsection{Ant System Parallèle}
+\subsubsection{Algorithme}
+La version parallèle est la même que la version séquentielle, sauf qu'on parallélise les $m$ fourmis lors des itérations. En utilisant
+les facilités du langage Golang. Il faut ajouter des verrous lors de l'écriture du $\Delta\tau$, et un mécanisme de synchronisation
+à la fin d'une itération.
+Une fois cela fait, on obtient les mêmes résultats que la version séquentielle. Cependant en plus rapide, il est donc possible d'augmenter
+$t_{max}$ dans la version parallèle.
+
+\subsubsection{Mesures}
+Voici les mesures pour $t_{max} = 100$ et $\rho = 0.1$, toujours vingts itérations:
+\paragraph{}
+\begin{tabular}{|l|c|c|}
+ \hline
+ File & Mean & Std\\
+ \hline
+ cities.dat& 27.51536258209029 & 0\\
+ \hline
+cities2.dat& 2.9352583475370393  & 0.03282959295749493\\
+ \hline
+cities50.dat& 6.278780156847236  & 9.362222582871203e-16\\
+ \hline
+cities60.dat& 6.275935685439598  & 9.362222582871203e-16\\
+ \hline
+cities80.dat& 6.281344358562613  & 0\\
+ \hline
+cities100.dat& 6.282070156684793  & 9.362222582871203e-16\\
+ \hline
+\end{tabular}
+
+On remarque que les résultats sont meilleurs que la version à 50 itérations. En augmentant la valeur de $t_{max}$, on augmente la qualité
+des résultats. En utilisant la version parallèle, nous avons dessiné des exemples de résultats pour avoir une idée:
+
+\includegraphics[scale=0.4]{citieAnt}\\
+\includegraphics[scale=0.4]{citieAnt2}\\
+\includegraphics[scale=0.4]{citieAnt50}\\
+\includegraphics[scale=0.4]{citieAnt60}\\
+\includegraphics[scale=0.4]{citieAnt80}\\
+\includegraphics[scale=0.4]{citieAnt100}\\
+
+On confirme ce que l'on a compris grâce au tableau de résultats, ci-dessus:
+\begin{itemize}
+ \item pour le cercle la solution optimale est trouvée
+ \item l'algorithme se comporte assez bien même lors de paysage très rugeux (cities2.dat)
+ \item il trouve de bonnes valeurs et ce souvent (cities.dat)
+\end{itemize}
+
+Pour appuyer ces résultats, nous allons présenter les histogrammes des valeures obtenues pour vingt lancés:\\
+
+\paragraph{}
+\textbf{Cities.dat}\\
+\includegraphics[scale=0.4]{cities_dat}\\
+\paragraph{}\textbf{Cities2.dat}\\
+\includegraphics[scale=0.4]{cities2_dat}\\
+\paragraph{}\textbf{Cities50.dat}\\
+\includegraphics[scale=0.4]{cities50_dat}\\
+\paragraph{}\textbf{Cities80.dat}\\
+\includegraphics[scale=0.4]{cities80_dat}\\
+\paragraph{}\textbf{Cities100.dat}\\
+\includegraphics[scale=0.4]{cities100_dat}\\
+
+\paragraph{}Ce qui confirme les résultats.
 \end{document}
