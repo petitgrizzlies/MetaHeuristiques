@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Ville struct {
@@ -218,11 +219,17 @@ func wrapper(file string, t_max int, m int, titre string, out string, version st
 	villes := readFile(file)
 	solution := greedy(file)
 	if version == "sequentiel" {
+		start := time.Now()
 		res := antSequentiel(t_max, m, villes, norm(solution))
+		stop := time.Since(start)
+		fmt.Printf("Take : %s", stop)
 		plotting(res, titre, "X", "Y", out)
 
 	} else if version == "parallel" {
+		start := time.Now()
 		res := antParallel(t_max, m, villes, norm(solution))
+		stop := time.Since(start)
+		fmt.Printf("Take : %s", stop)
 		plotting(res, titre, "X", "Y", out)
 
 	} else {
@@ -258,10 +265,10 @@ func change(number int) string {
 
 func main() {
 	fmt.Println("Start:")
-	t_max := 100
+	t_max := 30
 
 	// wrapper("./data/cities.dat", t_max, 17, "Cities.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(17), "citieAnt", "parallel")
-	// wrapper("./data/cities2.dat", t_max, 49, "Cities2.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(49), "citieAnt2", "parallel")
+	wrapper("./data/cities2.dat", t_max, 49, "Cities2.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(49), "citieAnt2", "parallel")
 	// wrapper("./data/cities50.dat", t_max, 50, "Cities50.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(50), "citieAnt50", "parallel")
 	// wrapper("./data/cities60.dat", t_max, 60, "Cities60.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(60), "citieAnt60", "parallel")
 	// wrapper("./data/cities80.dat", t_max, 80, "Cities80.dat with AS\n"+"t_max = "+change(t_max)+"\nm = "+change(80), "citieAnt80", "parallel")
@@ -270,7 +277,7 @@ func main() {
 	// wrapper_ten("./data/cities.dat", t_max, 17, "parallel")
 	// wrapper_ten("./data/cities2.dat", t_max, 49, "parallel")
 	// wrapper_ten("./data/cities50.dat", t_max, 50, "parallel")
-	wrapper_ten("./data/cities60.dat", t_max, 60, "parallel")
+	// wrapper_ten("./data/cities60.dat", t_max, 60, "parallel")
 	// wrapper_ten("./data/cities80.dat", t_max, 80, "parallel")
 	// wrapper_ten("./data/cities100.dat", t_max, 100, "parallel")
 }
