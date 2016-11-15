@@ -7,12 +7,6 @@ import copy
 import matplotlib.pyplot as plt
 
 
-def floor(number):
-    if number >= 0.5:
-        return 1
-    return 0
-
-
 class Particule():
 
     def __init__(self, index, size_theta1, size_theta2, images, labels):
@@ -27,15 +21,15 @@ class Particule():
         self.bestValue = self.fitnessBest(images, labels)
 
     def update(self, omega, c1, r1, c2, r2, bestGlobal):
-        theta = np.array(self.theta1_size[0] * self.theta1_size[1] + self.theta2_size[0] * self.theta2_size[1])
         theta = np.append(self.theta1, self.theta2)
-        self.v = omega * self.v + c1 * r1 * (self.best - theta) + c2 * r2 * (bestGlobal.best - theta)
+        best = np.append(bestGlobal.theta1, bestGlobal.theta2)
+        self.v = omega * self.v + c1 * r1 * (self.best - theta) + c2 * r2 * (best - theta)
         theta += self.v
         self.theta1 = theta[0: self.theta1_size[0] * self.theta1_size[1]]
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
 
     def fitness(self, images, labels):
-        liste = [floor(neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x)) for x in images]
+        liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         self.fitnessValue = sum([x*x for x in res])
         return self.fitnessValue
@@ -43,7 +37,7 @@ class Particule():
     def fitnessBest(self, images, labels):
         theta1 = self.best[0: self.theta1_size[0] * self.theta1_size[1]]
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
-        liste = [floor(neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x)) for x in images]
+        liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         return sum([x*x for x in res])
 
@@ -66,10 +60,14 @@ class Espace():
         self.bestGlobal = self.particule[index]
 
     def findBest(self):
-        res = [x.fitnessValue for x in self.particule]
-        index = res.index(max(res))
-        if self.particule[index].fitnessValue < self.bestGlobal.fitnessValue:
+        res = [x.bestValue for x in self.particule]
+        index = res.index(min(res))
+        if self.particule[index].bestValue < self.bestGlobal.bestValue:
             self.bestGlobal = copy.deepcopy(self.particule[index])
+
+    def getFitness(self):
+        res = [x.fitnessValue for x in self.particule]
+        return res
 
 
 def update(x, omega, c1, c2, bestGlobal):
@@ -84,9 +82,9 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
     images, labels = neuralNet.read_image(xPath, yPath, 200)
     e = Espace(t1, t2, particuleNumbers, images, labels)
     e.initBest()
-    res = [e.bestGlobal.fitnessValue]
+    res = [e.getFitness()]
     # init constante
-    omega = 0.9
+    omega = 0.5
     c1 = 2
     c2 = 2
 
@@ -97,7 +95,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         [x.updateBest(images, labels) for x in e.particule]
         # find the absolute best
         e.findBest()
-        res.append(e.bestGlobal.fitnessValue)
+        res.append(e.getFitness())
         [update(x, omega, c1, c2, e.bestGlobal) for x in e.particule]
         t_max -= 1
         print(t_max)
@@ -105,6 +103,12 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
     return res
 
 if __name__ == '__main__':
-    res = main(particuleNumbers=5, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=30)
-    # plt.plot(res)
-    # plt.show()
+    n = 5
+    res = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40)
+    res = np.matrix(res)
+    tmp = []
+    for index in range(n):
+        l, = plt.plot(res[:, index], label="Particule : " + str(index))
+        tmp.append(l)
+    plt.legend(handles=tmp)
+    plt.show()
