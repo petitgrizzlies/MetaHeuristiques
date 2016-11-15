@@ -31,7 +31,7 @@ class Particule():
     def fitness(self, images, labels):
         liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
-        self.fitnessValue = sum([x*x for x in res])
+        self.fitnessValue = sum([x*x for x in res])/len(images)
         return self.fitnessValue
 
     def fitnessBest(self, images, labels):
@@ -39,7 +39,7 @@ class Particule():
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
         liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
-        return sum([x*x for x in res])
+        return sum([x*x for x in res])/len(images)
 
     def updateBest(self, images, labels):
         if self.fitnessValue < self.bestValue:
@@ -104,11 +104,14 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
 
 if __name__ == '__main__':
     n = 5
-    res = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40)
+    res = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=120)
     res = np.matrix(res)
     tmp = []
     for index in range(n):
         l, = plt.plot(res[:, index], label="Particule : " + str(index))
         tmp.append(l)
     plt.legend(handles=tmp)
+    plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
+    plt.xlabel("Itérations")
+    plt.title("$t_{max} = 120$, et " + str(n) + " particules")
     plt.show()
