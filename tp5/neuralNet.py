@@ -33,10 +33,7 @@ def layout(theta, biais, vecteur):
     On prend la matrice theta, on ajoute le biais à vecteur. On fait la
     multiplication matricielle. On retourne le résultat après y avoir appliqué la fonction g.
     """
-    res = theta.dot(np.matrix(np.append(vecteur, 1)).transpose())
-    res = [1/float(1 + np.exp(-x)) for x in res]
-
-    return np.array(res)
+    return np.squeeze(np.asarray(1./(1 + np.exp(-theta.dot(np.matrix(np.append(vecteur, 1)).transpose())))))
 
 
 def fitness(theta1, theta2, biais, vecteur):
@@ -46,4 +43,4 @@ def fitness(theta1, theta2, biais, vecteur):
     res = layout(theta=theta1, biais=biais, vecteur=vecteur)
     res = layout(theta=theta2, biais=biais, vecteur=res)
 
-    return res[0]
+    return res.max()
