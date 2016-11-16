@@ -5,6 +5,7 @@ import neuralNet
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
+import tqdm
 
 
 class Particule():
@@ -88,7 +89,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
     c1 = 2
     c2 = 2
 
-    while(t_max > 0):
+    for x in tqdm.tqdm(range(t_max)):
         # calculate its fitness
         [x.fitness(images, labels) for x in e.particule]
         # update the best
@@ -97,21 +98,42 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         e.findBest()
         res.append(e.getFitness())
         [update(x, omega, c1, c2, e.bestGlobal) for x in e.particule]
-        t_max -= 1
-        print(t_max)
 
-    return res
+        theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
+        theta2 = e.bestGlobal.best[e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]:].reshape(e.bestGlobal.theta2_size)
+    return res, theta1, theta2
 
-if __name__ == '__main__':
-    n = 5
-    res = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=120)
+
+def plot():
+    n = 15
+    t_max = 60
+    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max)
     res = np.matrix(res)
     tmp = []
     for index in range(n):
         l, = plt.plot(res[:, index], label="Particule : " + str(index))
         tmp.append(l)
-    plt.legend(handles=tmp)
+    # plt.legend(handles=tmp)
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
     plt.xlabel("Itérations")
-    plt.title("$t_{max} = 120$, et " + str(n) + " particules")
+    plt.title("$t_{max} = " + str(t_max) + "$, et " + str(n) + " particules")
     plt.show()
+
+    images, labels = neuralNet.read_image('X.data', 'Y.data', 200)
+    new_res = np.where(np.array([neuralNet.fitness(theta1, theta2, 1, x) for x in images]) >= 0.5, 1, 0) - np.array(labels)
+    new_res = 100 - (np.sum(np.abs(new_res))/200) * 100
+    print("Accuracy : " + str(new_res) + "%")
+
+
+def ten_times():
+    n = 10
+    liste = []
+    for x in range(10):
+        print("Itération : " + str(x))
+        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=45)
+        liste.append(min(min(res)))
+    print(liste)
+
+
+if __name__ == '__main__':
+    plot()
