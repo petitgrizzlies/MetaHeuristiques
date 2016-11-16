@@ -83,9 +83,9 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
     images, labels = neuralNet.read_image(xPath, yPath, 200)
     e = Espace(t1, t2, particuleNumbers, images, labels)
     e.initBest()
-    res = [e.getFitness()]
+    res = []
     # init constante
-    omega = 0.5
+    omega = 0.75
     c1 = 2
     c2 = 2
 
@@ -96,7 +96,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         [x.updateBest(images, labels) for x in e.particule]
         # find the absolute best
         e.findBest()
-        res.append(e.getFitness())
+        res.append(e.bestGlobal.fitnessValue)
         [update(x, omega, c1, c2, e.bestGlobal) for x in e.particule]
 
         theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
@@ -105,15 +105,10 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
 
 
 def plot():
-    n = 15
-    t_max = 60
+    n = 40
+    t_max = 75
     res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max)
-    res = np.matrix(res)
-    tmp = []
-    for index in range(n):
-        l, = plt.plot(res[:, index], label="Particule : " + str(index))
-        tmp.append(l)
-    # plt.legend(handles=tmp)
+    plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
     plt.xlabel("Itérations")
     plt.title("$t_{max} = " + str(t_max) + "$, et " + str(n) + " particules")
@@ -126,14 +121,18 @@ def plot():
 
 
 def ten_times():
-    n = 10
+    n = 40
     liste = []
+    res2 = []
     for x in range(10):
         print("Itération : " + str(x))
-        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=45)
-        liste.append(min(min(res)))
-    print(liste)
+        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40)
+        liste.append(res)
+
+    for ele in liste:
+        res2.append(min(ele))
+    print(res2)
 
 
 if __name__ == '__main__':
-    plot()
+    ten_times()
