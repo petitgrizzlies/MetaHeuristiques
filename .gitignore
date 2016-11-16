@@ -9,3 +9,4 @@
 *.lprof
 *.binary
 __main__*
+__pycache__
