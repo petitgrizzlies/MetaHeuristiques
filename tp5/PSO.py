@@ -9,8 +9,22 @@ import tqdm
 
 
 class Particule():
+    """
+    Il s'agit de la classe particule. Elle dispose de différents attributs:
+        - index -> pour identifier de manière unique la particule
+        - theta{1,2}_size -> qui donne la taille des matrices theta1 et theta2
+        - theta{1,2} -> des arrays numpy
+        - v -> notre vecteur vitesse de taille : |v| = |theta1| + |theta2|
+        - best -> le meilleur vecteur rencontrer
+        - fitnessValue -> la valeur acctuelle pour tetha1,theta2
+        - bestValue -> la valeur du vecteur best
+    """
 
     def __init__(self, index, size_theta1, size_theta2, images, labels):
+        """
+        La méthode __init__ permet d'initialiser les différents attributs de la classe
+        particule.
+        """
         self.index = index
         self.theta1_size = size_theta1
         self.theta2_size = size_theta2
@@ -22,6 +36,12 @@ class Particule():
         self.bestValue = self.fitnessBest(images, labels)
 
     def update(self, omega, c1, r1, c2, r2, bestGlobal):
+        """
+        La méthode update va calculer la nouvelle vitesse:
+            1. v = omega * v + c1 * r1 * (bestLocal - vecteurLocal) + c2 * r2 * (bestGlobal - vecteurLocal)
+        Puis calculer la nouvelle position:
+            2. s = s + v
+        """
         theta = np.append(self.theta1, self.theta2)
         best = np.append(bestGlobal.theta1, bestGlobal.theta2)
         self.v = omega * self.v + c1 * r1 * (self.best - theta) + c2 * r2 * (best - theta)
@@ -30,12 +50,26 @@ class Particule():
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
 
     def fitness(self, images, labels):
+        """
+        La fitness est juste l'évaluation du réseau de neurone sur toutes les images de l'ensemble d'entrainements.
+        Il y a une composition de fonction:
+            1. np.where(vecteur >= 0.5, 1, 0) -> met les éléments du vecteur à 1 si  la valeur est >= 0.5 , à 0 sinon.
+            2. theta{1,2}.reshape(theta{1,2}_size) -> permet de passer d'un tableau t x 1 à un tableau  m x n. Où m et n sont
+                les valeurs définies par tetha{1,2}_size.
+            3. np.array(labels) - np.array(liste) -> va soustraire les éléments 1 à 1.
+            4. sum([x*x for x in res]) / len(images) -> calcule le carré de chaque éléments puis divise par la longueur.
+            5. on assigne la valeur de 4 à l'atribut fitnessValue
+        """
         liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         self.fitnessValue = sum([x*x for x in res])/len(images)
         return self.fitnessValue
 
     def fitnessBest(self, images, labels):
+        """
+        Le code est semblable à la méthode fitness, cependant il faut extraire la valeur de best, qui est un
+        tableau en deux tableaux theta{1,2}. Puis même code que fitness, sauf qu'on retourne la valeur calculée.
+        """
         theta1 = self.best[0: self.theta1_size[0] * self.theta1_size[1]]
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
         liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
@@ -43,45 +77,75 @@ class Particule():
         return sum([x*x for x in res])/len(images)
 
     def updateBest(self, images, labels):
+        """
+        On vérifie si la valeur du meilleure est plus grande que la valeur acctuelle. Si oui, on met à jour le meilleur.
+        Pour la mise à jour, on copie le vecteur actuel dans le vecteur best, et on met à jour la valeur de l'atribut
+        bestValue.
+        """
         if self.fitnessValue < self.bestValue:
             self.best = np.append(self.theta1, self.theta2)
             self.bestValue = copy.deepcopy(self.fitnessValue)
 
 
 class Espace():
+    """
+    Espace est une classe qui contient un ensemble de particule;
+        - particule -> un tableau de particules
+        - bestGlobal -> le meilleur individu de l'espace
+    """
 
     def __init__(self, size_theta1, size_theta2, number, images, labels):
+        """
+        Pour la méthode __init__, on va instancier n particules. cf: méthode __init__ particules.
+        """
         self.particule = []
         for index in range(number):
             self.particule.append(Particule(index, size_theta1, size_theta2, images, labels))
 
     def initBest(self):
+        """
+        On va trouver le min des particules, puis prendre la plus petite particule et la
+        copier dans l'attribut bestGlobal
+        """
         res = (list(map(lambda x: x.fitnessValue, self.particule)))
         index = res.index(min(res))
-        self.bestGlobal = self.particule[index]
+        self.bestGlobal = copy.deepcopy(self.particule[index])
 
     def findBest(self):
+        """
+        Même principe que initBest, sauf qu'on vérifie si la valeur du bestGlobal
+        est plus grande que celle du meilleur individu courrant de l'espace
+        """
         res = [x.bestValue for x in self.particule]
         index = res.index(min(res))
         if self.particule[index].bestValue < self.bestGlobal.bestValue:
             self.bestGlobal = copy.deepcopy(self.particule[index])
 
     def getFitness(self):
+        """
+        Permet de récupérer la fitness de toutes les particules de l'espaces
+        """
         res = [x.fitnessValue for x in self.particule]
         return res
 
 
 def update(x, omega, c1, c2, bestGlobal):
     """
-    On assume que x est un objet particule
+    On assume que x est un objet particule. C'st une interface pour appliquer la méthode update
+    aux particules
     """
     x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal)
 
 
 def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
-    # on initialise le tout
+    """
+    Correspond à l'algorithme PSO
+    """
+    # on initialise les images et les labels depuis les fichiers.
     images, labels = neuralNet.read_image(xPath, yPath, 200)
+    # on crée l'espace des particules
     e = Espace(t1, t2, particuleNumbers, images, labels)
+    # on trouve le best global
     e.initBest()
     res = []
     # init constante
@@ -97,16 +161,21 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         # find the absolute best
         e.findBest()
         res.append(e.bestGlobal.fitnessValue)
+        # mise à jour de la vitesse
         [update(x, omega, c1, c2, e.bestGlobal) for x in e.particule]
 
-        theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
-        theta2 = e.bestGlobal.best[e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]:].reshape(e.bestGlobal.theta2_size)
+    # on retourne les meilleures matrices pour faire des tests
+    theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
+    theta2 = e.bestGlobal.best[e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]:].reshape(e.bestGlobal.theta2_size)
     return res, theta1, theta2
 
 
 def plot():
+    """
+    Simple fonction qui lance le PSO, et qui plot les résultats
+    """
     n = 40
-    t_max = 75
+    t_max = 70
     res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
@@ -135,4 +204,4 @@ def ten_times():
 
 
 if __name__ == '__main__':
-    ten_times()
+    plot()
