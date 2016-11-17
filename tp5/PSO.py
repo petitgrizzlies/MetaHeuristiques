@@ -21,9 +21,18 @@ class Particule():
     """
 
     def __init__(self, index, size_theta1, size_theta2, images, labels):
-        """
+        """Fonction d'initialisation
+
         La méthode __init__ permet d'initialiser les différents attributs de la classe
         particule.
+
+        Arguments:
+            index {int} -- l'index de la particule
+            size_theta1 {[int]} -- taille [x,y] de la matrice theta1
+            size_theta2 {[int]} -- taille [x,y] de la matrice theta2
+            images {np.matrix} -- une matrice contenant toutes les images
+            labels {np.matrix} -- une matrice contenant les labels.
+
         """
         self.index = index
         self.theta1_size = size_theta1
@@ -36,11 +45,20 @@ class Particule():
         self.bestValue = self.fitnessBest(images, labels)
 
     def update(self, omega, c1, r1, c2, r2, bestGlobal):
-        """
+        """Mise à jour de la vitesse et de la position.
+
         La méthode update va calculer la nouvelle vitesse:
             1. v = omega * v + c1 * r1 * (bestLocal - vecteurLocal) + c2 * r2 * (bestGlobal - vecteurLocal)
         Puis calculer la nouvelle position:
             2. s = s + v
+
+        Arguments:
+            omega {float} -- un coefficient multiplicatif
+            c1 {int} -- une constante
+            r1 {float} -- un nombre aléatoire [0,1]
+            c2 {int} -- une constante
+            r2 {float} -- un nombre aléatoire [0,1]
+            bestGlobal {np.array} -- la position de l'optimum global
         """
         theta = np.append(self.theta1, self.theta2)
         best = np.append(bestGlobal.theta1, bestGlobal.theta2)
@@ -50,7 +68,8 @@ class Particule():
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
 
     def fitness(self, images, labels):
-        """
+        """Évaluation du réseau avec toutes les images.
+
         La fitness est juste l'évaluation du réseau de neurone sur toutes les images de l'ensemble d'entrainements.
         Il y a une composition de fonction:
             1. np.where(vecteur >= 0.5, 1, 0) -> met les éléments du vecteur à 1 si  la valeur est >= 0.5 , à 0 sinon.
@@ -59,17 +78,34 @@ class Particule():
             3. np.array(labels) - np.array(liste) -> va soustraire les éléments 1 à 1.
             4. sum([x*x for x in res]) / len(images) -> calcule le carré de chaque éléments puis divise par la longueur.
             5. on assigne la valeur de 4 à l'atribut fitnessValue
+
+        Arguments:
+            images {np.matrix} -- la matrice d'image
+            labels {np.matrix} -- la matrice des labels
+
+        Returns:
+            float -- le nombre d'erreur au carré moyennée.
         """
+
         liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         self.fitnessValue = sum([x*x for x in res])/len(images)
         return self.fitnessValue
 
     def fitnessBest(self, images, labels):
-        """
+        """Évaluation du réseau avec toutes les images.
+
         Le code est semblable à la méthode fitness, cependant il faut extraire la valeur de best, qui est un
         tableau en deux tableaux theta{1,2}. Puis même code que fitness, sauf qu'on retourne la valeur calculée.
+
+        Arguments:
+            images {np.matrix} -- la matrice d'image
+            labels {np.matrix} -- la matrice des labels
+
+        Returns:
+        float -- le nombre d'erreur au carré moyennée.
         """
+
         theta1 = self.best[0: self.theta1_size[0] * self.theta1_size[1]]
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
         liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
@@ -77,10 +113,15 @@ class Particule():
         return sum([x*x for x in res])/len(images)
 
     def updateBest(self, images, labels):
-        """
+        """Mise à jour du meilleur résultat rencontré
+
         On vérifie si la valeur du meilleure est plus grande que la valeur acctuelle. Si oui, on met à jour le meilleur.
         Pour la mise à jour, on copie le vecteur actuel dans le vecteur best, et on met à jour la valeur de l'atribut
         bestValue.
+
+        Arguments:
+            images {np.matrix} -- la matrice d'image
+            labels {np.matrix} -- la matrice des labels
         """
         if self.fitnessValue < self.bestValue:
             self.best = np.append(self.theta1, self.theta2)
@@ -95,15 +136,24 @@ class Espace():
     """
 
     def __init__(self, size_theta1, size_theta2, number, images, labels):
-        """
+        """Fonction d'initialisation
+
         Pour la méthode __init__, on va instancier n particules. cf: méthode __init__ particules.
+
+        Arguments:
+            size_theta1 {[int]} -- taille [x,y] de la matrice theta1
+            size_theta2 {[int]} -- taille [x,y] de la matrice theta2
+            number {int} -- nombre de particule de l'espace
+            images {np.matrix} -- la matrice d'image
+            labels {np.matrix} -- la matrice des labels
         """
         self.particule = []
         for index in range(number):
             self.particule.append(Particule(index, size_theta1, size_theta2, images, labels))
 
     def initBest(self):
-        """
+        """Initialisation du bestGlobal
+
         On va trouver le min des particules, puis prendre la plus petite particule et la
         copier dans l'attribut bestGlobal
         """
@@ -112,7 +162,8 @@ class Espace():
         self.bestGlobal = copy.deepcopy(self.particule[index])
 
     def findBest(self):
-        """
+        """Mise à jour du bestGlobal
+
         Même principe que initBest, sauf qu'on vérifie si la valeur du bestGlobal
         est plus grande que celle du meilleur individu courrant de l'espace
         """
@@ -124,23 +175,49 @@ class Espace():
     def getFitness(self):
         """
         Permet de récupérer la fitness de toutes les particules de l'espaces
+
+        Returns:
+            [float] -- la fitness courrante de chaque particule
         """
         res = [x.fitnessValue for x in self.particule]
         return res
 
 
 def update(x, omega, c1, c2, bestGlobal):
-    """
-    On assume que x est un objet particule. C'st une interface pour appliquer la méthode update
+    """Mise à jour d'une particule
+
+    On assume que x est un objet particule. C'est une interface pour appliquer la méthode update
     aux particules
+
+    Arguments:
+        x {particule} -- la particule dont on veut mettre à jour les valeurs
+        omega {float} -- la valeur de la constante omega
+        c1 {int} -- valeur de la constante c1
+        c2 {int} -- valeur de la constante c2
+        bestGlobal {np.array} -- la postion du meilleur de l'espace
     """
+
     x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal)
 
 
 def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
+    """Algorithme PSO
+
+    Applique l'algorithme PSO sur les paramètres.
+
+    Arguments:
+        particuleNumbers {int} -- nombre de particules
+        xPath {string} -- un chemin jusqu'au fichier
+        yPath {string} -- un chemin jusqu'au fichier
+        t1 {[int]} -- taille de la matrice theta1
+        t2 {[int]} -- taille de la matrice theta2
+        t_max {int} -- nombre d'itération
+
+    Returns:
+        [],np.array,np.array -- donne une liste avec la valeur de la fitness du global best,
+        ainsi que les meilleures theta{1,2}
     """
-    Correspond à l'algorithme PSO
-    """
+
     # on initialise les images et les labels depuis les fichiers.
     images, labels = neuralNet.read_image(xPath, yPath, 200)
     # on crée l'espace des particules
@@ -171,7 +248,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
 
 
 def plot():
-    """
+    """Plot
     Simple fonction qui lance le PSO, et qui plot les résultats
     """
     n = 40
@@ -190,6 +267,11 @@ def plot():
 
 
 def ten_times():
+    """Lance 10 fois l'algorithme PSO
+
+    On va lancer 10 fois l'algorithme, en récupérant la fitness du best à chaque fois.
+    On print ces valeurs
+    """
     n = 40
     liste = []
     res2 = []
