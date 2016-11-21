@@ -2,7 +2,6 @@
 # -* coding:utf-8 -*-
 
 import numpy as np
-from numba import *
 
 
 def read_image(pathX, pathY, n):
@@ -54,7 +53,7 @@ def layout(theta, biais, vecteur):
     Returns:
         np.matrix -- retourne le résultat du calcul.
     """
-    return np.squeeze(np.asarray(1./(1 + np.exp(-theta.dot(np.matrix(np.append(vecteur, 1)).transpose())))))
+    return np.squeeze(np.asarray(1. / (1 + np.exp(-theta.dot(np.matrix(np.append(vecteur, 1)).transpose())))))
 
 
 def fitness(theta1, theta2, biais, vecteur):
