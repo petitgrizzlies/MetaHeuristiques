@@ -270,8 +270,8 @@ def plot(boolean):
     """Plot
     Simple fonction qui lance le PSO, et qui plot les résultats
     """
-    n = 20
-    t_max = 30
+    n = 40
+    t_max = 70
     res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
@@ -290,18 +290,18 @@ def plot(boolean):
     print("Accuracy : " + str(new_res) + "%")
 
 
-def ten_times():
+def ten_times(boolean):
     """Lance 10 fois l'algorithme PSO
 
     On va lancer 10 fois l'algorithme, en récupérant la fitness du best à chaque fois.
     On print ces valeurs
     """
-    n = 40
+    n = 30
     liste = []
     res2 = []
     for x in range(10):
         print("Itération : " + str(x))
-        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40, cut_off=True)
+        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40, cut_off=boolean)
         liste.append(res)
 
     for ele in liste:
@@ -310,4 +310,5 @@ def ten_times():
 
 
 if __name__ == '__main__':
-    plot(True)
+    # plot(False)
+    ten_times(True)
