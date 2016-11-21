@@ -37,8 +37,8 @@ class Particule():
         self.index = index
         self.theta1_size = size_theta1
         self.theta2_size = size_theta2
-        self.theta1 = (1-(-1)) * np.random.random_sample(size_theta1[0] * size_theta1[1]) + -1
-        self.theta2 = (1-(-1)) * np.random.random_sample(size_theta2[0] * size_theta2[1]) + -1
+        self.theta1 = (1 - (- 1)) * np.random.random_sample(size_theta1[0] * size_theta1[1]) + -1
+        self.theta2 = (1 - (- 1)) * np.random.random_sample(size_theta2[0] * size_theta2[1]) + -1
         self.v = np.random.rand(size_theta1[0] * size_theta1[1] + size_theta2[0] * size_theta2[1])
         self.best = np.append(self.theta1, self.theta2)
         self.fitnessValue = self.fitness(images, labels)
@@ -89,7 +89,7 @@ class Particule():
 
         liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
-        self.fitnessValue = sum([x*x for x in res])/len(images)
+        self.fitnessValue = sum([x * x for x in res]) / len(images)
         return self.fitnessValue
 
     def fitnessBest(self, images, labels):
@@ -110,7 +110,7 @@ class Particule():
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
         liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
-        return sum([x*x for x in res])/len(images)
+        return sum([x * x for x in res]) / len(images)
 
     def updateBest(self, images, labels):
         """Mise à jour du meilleur résultat rencontré
@@ -262,7 +262,7 @@ def plot():
 
     images, labels = neuralNet.read_image('X.data', 'Y.data', 200)
     new_res = np.where(np.array([neuralNet.fitness(theta1, theta2, 1, x) for x in images]) >= 0.5, 1, 0) - np.array(labels)
-    new_res = 100 - (np.sum(np.abs(new_res))/200) * 100
+    new_res = 100 - (np.sum(np.abs(new_res)) / 200) * 100
     print("Accuracy : " + str(new_res) + "%")
 
 
