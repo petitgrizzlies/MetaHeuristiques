@@ -44,7 +44,7 @@ class Particule():
         self.fitnessValue = self.fitness(images, labels)
         self.bestValue = self.fitnessBest(images, labels)
 
-    def update(self, omega, c1, r1, c2, r2, bestGlobal):
+    def update(self, omega, c1, r1, c2, r2, bestGlobal, cut_off):
         """Mise à jour de la vitesse et de la position.
 
         La méthode update va calculer la nouvelle vitesse:
@@ -59,10 +59,13 @@ class Particule():
             c2 {int} -- une constante
             r2 {float} -- un nombre aléatoire [0,1]
             bestGlobal {np.array} -- la position de l'optimum global
+            cut_off {bool} -- dit si on applique le cut off ou non
         """
         theta = np.append(self.theta1, self.theta2)
         best = np.append(bestGlobal.theta1, bestGlobal.theta2)
         self.v = omega * self.v + c1 * r1 * (self.best - theta) + c2 * r2 * (best - theta)
+        if cut_off:
+            self.v = np.where(np.abs(self.v) > 0.5, 0, self.v)
         theta += self.v
         self.theta1 = theta[0: self.theta1_size[0] * self.theta1_size[1]]
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
@@ -183,7 +186,7 @@ class Espace():
         return res
 
 
-def update(x, omega, c1, c2, bestGlobal):
+def update(x, omega, c1, c2, bestGlobal, cut_off):
     """Mise à jour d'une particule
 
     On assume que x est un objet particule. C'est une interface pour appliquer la méthode update
@@ -195,12 +198,13 @@ def update(x, omega, c1, c2, bestGlobal):
         c1 {int} -- valeur de la constante c1
         c2 {int} -- valeur de la constante c2
         bestGlobal {np.array} -- la postion du meilleur de l'espace
+        cut_off {bool} -- applique ou non le cut off
     """
 
-    x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal)
+    x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal, cut_off)
 
 
-def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
+def main(particuleNumbers, xPath, yPath, t1, t2, t_max, cut_off):
     """Algorithme PSO
 
     Applique l'algorithme PSO sur les paramètres.
@@ -212,6 +216,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         t1 {[int]} -- taille de la matrice theta1
         t2 {[int]} -- taille de la matrice theta2
         t_max {int} -- nombre d'itération
+        cut_off {bool} -- dis s'il y a un cut off ou non
 
     Returns:
         [],np.array,np.array -- donne une liste avec la valeur de la fitness du global best,
@@ -239,7 +244,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
         e.findBest()
         res.append(e.bestGlobal.fitnessValue)
         # mise à jour de la vitesse
-        [update(x, omega, c1, c2, e.bestGlobal) for x in e.particule]
+        [update(x, omega, c1, c2, e.bestGlobal, cut_off) for x in e.particule]
 
     # on retourne les meilleures matrices pour faire des tests
     theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
@@ -247,18 +252,37 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max):
     return res, theta1, theta2
 
 
-def plot():
+def print_data(array):
+    """Afficher des données
+
+    Afficher le min, le max, la moyenne et la déviation standard.
+
+    Arguments:
+        array {np.arry} -- le vecteur numpy dont on veut les infos
+    """
+    print("Min : " + str(array.min()))
+    print("Max : " + str(array.max()))
+    print("Mean: " + str(array.mean()))
+    print("Std : " + str(array.std()))
+
+
+def plot(boolean):
     """Plot
     Simple fonction qui lance le PSO, et qui plot les résultats
     """
-    n = 40
-    t_max = 70
-    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max)
+    n = 20
+    t_max = 30
+    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
     plt.xlabel("Itérations")
     plt.title("$t_{max} = " + str(t_max) + "$, et " + str(n) + " particules")
     plt.show()
+
+    print("Theta1 : ")
+    print_data(theta1)
+    print("\nTheta2:")
+    print_data(theta2)
 
     images, labels = neuralNet.read_image('X.data', 'Y.data', 200)
     new_res = np.where(np.array([neuralNet.fitness(theta1, theta2, 1, x) for x in images]) >= 0.5, 1, 0) - np.array(labels)
@@ -277,7 +301,7 @@ def ten_times():
     res2 = []
     for x in range(10):
         print("Itération : " + str(x))
-        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40)
+        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40, cut_off=True)
         liste.append(res)
 
     for ele in liste:
@@ -286,4 +310,4 @@ def ten_times():
 
 
 if __name__ == '__main__':
-    plot()
+    plot(True)
