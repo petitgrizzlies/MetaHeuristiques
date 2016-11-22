@@ -311,4 +311,4 @@ def ten_times(boolean):
 
 if __name__ == '__main__':
     # plot(False)
-    ten_times(True)
+    ten_times(False)

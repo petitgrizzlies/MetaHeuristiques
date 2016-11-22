@@ -1,0 +1,249 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[francais]{babel} 
+\usepackage{amsmath} % pour les formules de maths
+\usepackage{amssymb} % pour des symboles
+\usepackage{mathrsfs} % pour avoir acces a des jolies lettres calligrafiées. :)
+\usepackage{listings} % pour le code source
+\usepackage{color} % pour les couleurs
+\usepackage{graphicx} % pour les graphiques (images)
+\usepackage{fancyhdr} % pour utiliser le pagestyle fancy
+\usepackage[headheight=14pt]{geometry} % pour les marges
+
+\geometry{hmargin=3cm}
+
+\title{Metaheuristics for Optimization}
+\author{Romain Mencattini}
+\date{\today}
+
+\pagestyle{fancy} % pour avoir des entetes et des pieds de page
+\renewcommand\headrulewidth{0.6pt}
+\fancyhead[L]{Romain Mencattini} % haut de page gauche
+\fancyhead[R]{Université de Genève \today} % haut de page droite
+	
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Réseau de neurones}
+
+\paragraph{}Les réseaux de neurones sont une méthodes d'apprentissage. Cela signifie qu'à partir d'un ensemble d'entrainement, 
+ils vont \textit{apprendre} puis pourrons sortir les bons \textit{outputs} pour des \textit{inputs} donnés.\\
+Ils peuvent être composés de plusieurs couches , ou \textit{layouts}. Chaque couche contient des poids.
+En terme mathématique, on a un input $I$ de taille $(m,n)$ qu'on passe dans une couche $C_1$ de taille $(n,o)$. Ce résultat sera ensuite
+réinjecté dans l'éventuelle couche suivante $C_2$ de taille $(o,p)$ etc. Le but est d'obtenir à la fin une unique valeur.
+Une fois cette valeur, on va la passer à une fonction non linéaire, comme la fonction \textit{sigmoid} qui est définie comme:\\
+\begin{center}
+ \begin{math}
+  g(z) = \frac{1}{1 + \exp{-z}}
+ \end{math} 
+\end{center}
+
+ \includegraphics[scale=0.75]{sigmoid}
+ 
+ L'opération mathématique qui se cache derrière le passage d'\textit{inputs} à une couche est la multiplication matricielle. C'est pour
+ cela qu'il est important que les dimensions correspondent.
+ 
+ \paragraph{}
+ Dans notre cas, nous allons avoir des images de \textbf{400} pixels, sous formes d'un vecteur de taille $1x400$, avec deux couches.
+ Petite subtilité, nous voulons introduire un biais. En effet, sans ce dernier la séparation des classes se fera uniquement en terme de
+ rotation autour de l'origine, mais avec l'ajout du biais, on se retrouver avec une séparation affine et donc plus précise.
+ Il faudra donc que la première couche soit de taille $401\times25$, car on a 400 pixels + 1 biais.\\
+ La deuxième couche elle sera de taille $26\times1$, car on aura les 25 résultats de la couche précédente ainsi que le biais.\\
+ On obtient donc bien à la fin un résultat de taille $1\times1$.
+
+\section{Algorithme PSO}
+
+\paragraph{}Le but de l'algorithme PSO sera d'optimiser les poids des matrices correspondantes aux deux couches de notre réseau.
+Nous allons présenter le pseudo-code puis l'implémentation:
+\begin{enumerate}
+ \item On initialise tout les variables ainsi que les particules
+ \item Pour chaque particules on calcule la fitness et on met à jour le meilleur pour chaque particules.
+ \item On trouve le meilleur global en regardant chaque particule
+ \item Pour chaque particules on génère des nombres puis, on les fait bouger
+ \item On recommence à 2. tant que la condition d'arrêt n'est pas atteinte.
+\end{enumerate}
+
+\paragraph{1. Initialisation}
+Nous avons décidé de partir sur une logique objet. Chaque particule est un objet avec les caractéristiques suivantes:
+\begin{itemize}
+  \item un index $i$ pour identifier la particule
+ \item les matrices $\Theta_1$ et $\Theta_2$ qui sont les matrices des poids à optimiser
+ \item une vitesse $v_i$ qui représente à une certaine itération sa vitesse, il s'agit d'un vecteur de la taille de tout les poids
+ \item un meilleur local, qui correspond aux meilleures matrices rencontrées
+ \item les valeurs de fitness pour les matrices ainsi que le meilleur local, (pour éviter les calculs superflus)
+\end{itemize}
+
+Pour initialiser les matrices, on génère des nombres $\in [-1,1]$, pour la vitesse on génère des nombres $\in [0,1]$ pour chaque
+composantes. Le meilleur local se trouve être les premières matrices générées vu qu'ils n'y en a aucune autre.
+
+\paragraph{2. Calcul de fitness}
+Concernant le calcul de fitness, c'est là que le réseau de neurones rentre en compte. En effet pour calculer la fitness, il faut prendre
+chacune des 200 images, l'évaluer grâce au réseau de neurones puis la fonction \textit{sigmoid} et regarder si elle est bien classifiée ou 
+non par rapport à son label. Ensuite, on regarde le nombre d'erreur, et on va tenter de minimiser ce nombre.
+\\Plus précisément, si on pose que $h(x_k)$ correspond au résultat du réseau et de la fonction, on cherche à minimiser:
+\begin{center}
+ \begin{math}
+    \sum\limits_k(y_k - h(x_k))^2
+ \end{math}
+\end{center}
+Où $k$ représente l'index de notre image.
+
+Au niveau de l'implémentation et pour rester dans une logique objet, nous avons créer un objet \textit{Espace} qui contient toutes les
+particules ainsi que le meilleur résultat global. Nous itérons donc sur toutes les particules de l'espace afin de calculer les fitness.
+Ces dernières disposent d'une méthode qui calcule la fitness et la stock dans leur attribut.
+Puis une fois cela fait, l'espace itère de nouveau sur toutes les particules afin de mettre à jour le meilleur local de chaque particule, 
+vu qu'on a stocké la valeur de fitness du résultat courant et du best, l'opération se fait en $O(n)$ ce qui est agréable.
+
+\paragraph{3. Minimum global}
+En itérant sur chaque particule et en comparant avec le minimum global, on met à jour ce dernier. De la même manière que pour les 
+particules, le fait d'avoir stocké ces informations, accélère le processus.
+
+\paragraph{4. Mise à jour des particules}
+Il est nécessaire de faire bouger les particules. Pour cela, nous allons d'abord générer des nombres aléatoires $\in [0,1[$ nommé 
+$r_1,r_2$. Puis on allons modifier la vitesse de chaque particule de la manière suivante:
+\begin{center}
+ \begin{math}
+  v_i = \omega v_i + c_1 r_1 (b_i - s_i ) + c_2 r_2 (b_{global} - s_i)
+ \end{math}
+\end{center}
+Où $c_1$,$c_2$,$\omega$ sont des constantes, $s_i$ représente les matrices $\Theta_1$ et $\Theta_2$, $b_i$ est le meilleur local et 
+$b_{global}$ est le meilleur de l'espace entier.
+
+Une fois cela fait, on peut appliquer ,ou non cela dépend des paramètres souhaités, le $cut_{off}$. 
+Cette opération consiste à mettre à 0 les composantes de la vitesse qui sont
+trop élevées. Afin d'éviter de traverser l'espace de manière trop brutale et donc d'osciller trop violemment.
+
+Puis on fait:
+\begin{center}
+ \begin{math}
+  s_i = s_i + v_i
+ \end{math}
+\end{center}
+
+Afin de mettre à jour la position. On remarque donc que la vitesse sera dépendante d'autres éléments, et donc ne sera pas influencée que
+par sa seule inertie. C'est de cette manière que les particules s'influencent les unes les autres.
+
+\paragraph{5. Condition d'arrêt}
+Dans notre cas, nous avons décidé d'avoir une condition d'arrêt, correspondant à un nombre d'itération maximal. Une fois ce nombre atteint
+, on stoppe l'algorithme et on récupère le meilleur minimum de l'espace.
+
+\section{Paramètres et détails d'implémentations}
+Nous l'avons vu dans la section précédente, il y a énormément de paramètres modifiables. Nous allons détailler l'influence de ces 
+paramètres. Cette influence sera visible dans les résultats de la section suivante.
+
+Tout d'abord la constante $\omega$ permet de modifier l'inertie de la particule. Plus il sera grand plus la particule continuera sur 
+sa trajectoire, en revanche si on le diminue, la vitesse sera bien plus influencée par les autres particules et donc elle convergera
+plus rapidement.
+On a ici la différence entre l'intensification et l'exploration. Si on a un $\omega$ grand, on sera dans une logique d'exploration, 
+et dans le cas contraire, dans une logique d'intensification.
+
+Concernant les $c_1$,$c_2$ cela permet d'influencer d'une manière plus ou moins forte la trajectoire. On peut donner plus d'importance 
+au minimum local ou au minimum global. La meilleur solution reste de mettre la même valeur (2) afin de ne pas risquer de trop favoriser
+un type de solution par rapport à un autre. On risquerait de louper l'optimum global.
+
+Le dernier point le $cut_{off}$. Il permet de limiter la vitesse des particules et donc d'éviter de sortir de l'espace de recherche ou
+bien de faire des pas trop important. En effet, la vitesse n'était pas capée par l'équation de base, il est possible d'obtenir des pas
+bien trop grand et donc d'osciller d'une manière trop importante. On obtient donc une variance très grande, ainsi qu'une exploration 
+peut efficace et un risque de \textit{buffer overflow}.\\
+Une valeur acceptable pour le $cut_{off}$ sera de prendre le quart de la distance max de l'espace de recherche. Comme cela on parcourait 
+efficacement l'espace. C'est d'ailleurs notre choix, mais nous le verrons avec les résultats.
+
+Au niveau de l'implémentation: nous avons abusé de la librairie \textit{numpy} de calcul scientifique afin d'optimiser les calculs. Pour
+ce faire, nous avons vectorisé presque toutes les opérations afin de ne pas perdre du temps lors de boucle. En effet les boucles en Python
+sont particulièrement lentes, alors que l'utilisation de la vectorisation via \textit{numpy} (écrite en C) est particulièrement efficace.
+Le code est plus efficace mais moins lisible et donc moins maintenable, c'est donc un choix à faire.
+
+\section{Résultats et Conclusion}
+
+Voici un exemples de \textit{run} avec 40 particules, 70 itérations et un $\omega = 0.75$, avec $cut_{off}$\\
+\includegraphics[scale=0.75]{70_40_075_true}
+
+\paragraph{}Un autre exemple avec 40 particules, 70 itérations et un $\omega = 0.75$, sans $cut_{off}$\\
+\includegraphics[scale=0.75]{70_40_075_false}
+
+\paragraph{}On remarque que la manière dont décroit la fitness est bien plus violente dans la version sans $cut_{off}$. Cela vient du
+fait que la vitesse n'étant pas capée, on se retrouve avec d'énormes oscillations et donc l'exploration se fait pas à coup.
+Ce qui n'est pas le cas avec $cut_{off}$, on a donc une exploration , et une décroissance plus régulière.
+
+\paragraph{}On peut observer ce phénomène d'oscillations en dessinant les fitness de chaque particule au courant du temps:\\
+\includegraphics[scale=.35]{70_40_05}
+
+\paragraph{}Nous remarquons que malgré que $\omega =0.5$ ce qui devrait encourager une convergence rapide, les particules mettent du 
+temps à converger et sont chaotiques. Un autre élément important pour différencier ces deux \textit{runs} est de s'intéresser aux min,max,
+à la déviation standard et la moyenne.
+On obtient donc:
+
+\paragraph{Avec $cut_{off}$}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+  & $\Theta_1$ & $\Theta_2$\\
+  \hline
+  Min & -2.19 & -1.61\\
+  \hline
+  Max & 2.29 & 1.26\\
+  \hline
+  Mean & 0.03 & -0.06\\
+  \hline
+  Std & 0.59 & 0.73\\
+  \hline
+\end{tabular} 
+\end{center}
+
+
+\paragraph{Sans $cut_{off}$}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+  & $\Theta_1$ & $\Theta_2$\\
+  \hline
+  Min & -14.44 & -9.64\\
+  \hline
+  Max & 13.20 & 9.72\\
+  \hline
+  Mean & -0.39 & 0.35\\
+  \hline
+  Std & 5.03 & 4.94\\
+  \hline
+\end{tabular} 
+\end{center}
+
+On remarque que toutes les valeurs sont bien plus extrêmes dans le cas où on n'utilise pas le $cut_{off}$. On peut se concentrer donc 
+dans une zone plus restreinte et on gagne de l'effort computationnel. On peut signaler qu'on a obtenu 93.5\% dans le premier \textit{run}
+et 88.5\% pour la deuxième. Ce sont donc de bon résultats. Voyons lors qu'on lance 10 \textit{runs}
+
+\paragraph{}
+Voici les résultats pour 10 \textit{runs}, 30 particules, 40 itérations avec $cut_{off}$
+\begin{center}
+
+[0.11, 0.085, 0.13, 0.12, 0.095, 0.100, 0.070, 0.125, 0.070, 0.170]; 
+\end{center}
+
+ce qui nous donne :\\
+Mean = 	0.1075\\
+Std  = 	0.0290
+
+On obtient donc en moyenne: 89.25\% de bons résultats, avec une déviation standard très faible.
+
+\paragraph{}
+Voici les résultats pour 10 \textit{runs}, 30 particules, 40 itérations avec $cut_{off}$
+\begin{center}
+
+[0.195, 0.165, 0.175, 0.165, 0.165, 0.315, 0.185, 0.155, 0.080, 0.11];
+\end{center}
+
+ce qui nous donne :\\
+Mean = 	0.1710\\
+Std  = 	0.0582
+
+On obtient donc en moyenne: 86.9\% de bons résultats, avec une déviation standard très faible.
+On a donc de meilleurs résultats en moyenne avec le $cut_{off}$.
+
+\paragraph{}
+
+\end{document}
