@@ -53,7 +53,8 @@ def layout(theta, biais, vecteur):
     Returns:
         np.matrix -- retourne le résultat du calcul.
     """
-    return np.squeeze(np.asarray(1. / (1 + np.exp(-theta.dot(np.matrix(np.append(vecteur, 1)).transpose())))))
+    vecteur = np.concatenate((vecteur, np.ones((len(vecteur), biais))), axis=1)
+    return theta.dot(vecteur.transpose()).transpose()
 
 
 def fitness(theta1, theta2, biais, vecteur):
@@ -70,7 +71,7 @@ def fitness(theta1, theta2, biais, vecteur):
     Returns:
         res.max() -- donne un résultat [0,1]
     """
+
     res = layout(theta=theta1, biais=biais, vecteur=vecteur)
     res = layout(theta=theta2, biais=biais, vecteur=res)
-
-    return res.max()
+    return np.squeeze(np.asarray(1. / (1 + np.exp(-res))))
