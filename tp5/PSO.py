@@ -6,6 +6,7 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import tqdm
+import line_profiler
 
 
 class Particule():
@@ -70,6 +71,7 @@ class Particule():
         self.theta1 = theta[0: self.theta1_size[0] * self.theta1_size[1]]
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
 
+    # @profile
     def fitness(self, images, labels):
         """Évaluation du réseau avec toutes les images.
 
@@ -90,7 +92,8 @@ class Particule():
             float -- le nombre d'erreur au carré moyennée.
         """
 
-        liste = np.where(np.array([neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
+        liste = neuralNet.fitness(self.theta1.reshape(self.theta1_size), self.theta2.reshape(self.theta2_size), 1, images)
+        liste = np.where(np.array(liste) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         self.fitnessValue = sum([x * x for x in res]) / len(images)
         return self.fitnessValue
@@ -111,7 +114,8 @@ class Particule():
 
         theta1 = self.best[0: self.theta1_size[0] * self.theta1_size[1]]
         theta2 = self.best[self.theta1_size[0] * self.theta1_size[1]:]
-        liste = np.where(np.array([neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, x) for x in images]) >= 0.5, 1, 0)
+        liste = neuralNet.fitness(theta1.reshape(self.theta1_size), theta2.reshape(self.theta2_size), 1, images)
+        liste = np.where(np.array(liste) >= 0.5, 1, 0)
         res = np.array(labels) - np.array(liste)
         return sum([x * x for x in res]) / len(images)
 
@@ -270,8 +274,8 @@ def plot(boolean):
     """Plot
     Simple fonction qui lance le PSO, et qui plot les résultats
     """
-    n = 40
-    t_max = 70
+    n = 100
+    t_max = 1000
     res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
@@ -285,7 +289,7 @@ def plot(boolean):
     print_data(theta2)
 
     images, labels = neuralNet.read_image('X.data', 'Y.data', 200)
-    new_res = np.where(np.array([neuralNet.fitness(theta1, theta2, 1, x) for x in images]) >= 0.5, 1, 0) - np.array(labels)
+    new_res = np.where(neuralNet.fitness(theta1, theta2, 1, images) >= 0.5, 1, 0) - np.array(labels)
     new_res = 100 - (np.sum(np.abs(new_res)) / 200) * 100
     print("Accuracy : " + str(new_res) + "%")
 
@@ -310,5 +314,5 @@ def ten_times(boolean):
 
 
 if __name__ == '__main__':
-    # plot(False)
-    ten_times(False)
+    plot(True)
+    # ten_times(False)
