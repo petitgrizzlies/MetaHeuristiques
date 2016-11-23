@@ -275,7 +275,7 @@ def plot(boolean):
     Simple fonction qui lance le PSO, et qui plot les résultats
     """
     n = 100
-    t_max = 1000
+    t_max = 70
     res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
