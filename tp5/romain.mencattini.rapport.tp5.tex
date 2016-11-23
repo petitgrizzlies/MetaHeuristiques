@@ -246,7 +246,25 @@ On a donc de meilleurs résultats en moyenne avec le $cut_{off}$.
 
 \paragraph{}
 Le nombre de particule augmente la vitesse à laquelle on parcourt l'espace. Donc en échange d'un effort computationnel plus important, on
-gagne de l'exploration.
+gagne de l'exploration. Voici par des exemples avec, 50,60,80 et 100 particules (\textit{avec $\omega = 0.75$, 70 itérations et $cut_{off}$}):
+\\
+\includegraphics[scale=0.75]{p50}\\
+Accuracy = 96\%
+\\
+\includegraphics[scale=0.75]{p60}\\
+Accuracy = 97.5\%
+\\
+\includegraphics[scale=0.75]{p80}\\
+Accuracy = 96.5\%
+\\
+\includegraphics[scale=0.75]{p100}\\
+Accuracy : 98.5\%
+
+\paragraph{}On remarque donc qu'effectivement, en acceptant des calculs plus lourds (plus de particules), on gagne en précision.
+
+\paragraph{}Il faut faire attention, car les résultats sont évalués sur l'ensemble d'entrainement, il est donc possible de sur-apprendre et
+d'arriver à des scores aberrants. Il faudrait un ensemble test pour vérifier correctement les performances.
+
 
 
 \end{document}
