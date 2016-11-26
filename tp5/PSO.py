@@ -45,7 +45,7 @@ class Particule():
         self.fitnessValue = self.fitness(images, labels)
         self.bestValue = self.fitnessBest(images, labels)
 
-    def update(self, omega, c1, r1, c2, r2, bestGlobal, cut_off):
+    def update(self, omega, c1, r1, c2, r2, bestGlobal, cut_off, vmax):
         """Mise à jour de la vitesse et de la position.
 
         La méthode update va calculer la nouvelle vitesse:
@@ -66,7 +66,8 @@ class Particule():
         best = np.append(bestGlobal.theta1, bestGlobal.theta2)
         self.v = omega * self.v + c1 * r1 * (self.best - theta) + c2 * r2 * (best - theta)
         if cut_off:
-            self.v = np.where(np.abs(self.v) > 0.5, 0, self.v)
+            self.v = np.where(self.v > vmax, vmax, self.v)
+            self.v = np.where(self.v < -vmax, -vmax, self.v)
         theta += self.v
         self.theta1 = theta[0: self.theta1_size[0] * self.theta1_size[1]]
         self.theta2 = theta[self.theta1_size[0] * self.theta1_size[1]:]
@@ -190,7 +191,7 @@ class Espace():
         return res
 
 
-def update(x, omega, c1, c2, bestGlobal, cut_off):
+def update(x, omega, c1, c2, bestGlobal, cut_off, vmax):
     """Mise à jour d'une particule
 
     On assume que x est un objet particule. C'est une interface pour appliquer la méthode update
@@ -205,10 +206,10 @@ def update(x, omega, c1, c2, bestGlobal, cut_off):
         cut_off {bool} -- applique ou non le cut off
     """
 
-    x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal, cut_off)
+    x.update(omega, c1, np.random.rand(), c2, np.random.rand(), bestGlobal, cut_off, vmax)
 
 
-def main(particuleNumbers, xPath, yPath, t1, t2, t_max, cut_off):
+def main(particuleNumbers, xPath, yPath, t1, t2, t_max, cut_off, vmax):
     """Algorithme PSO
 
     Applique l'algorithme PSO sur les paramètres.
@@ -248,7 +249,7 @@ def main(particuleNumbers, xPath, yPath, t1, t2, t_max, cut_off):
         e.findBest()
         res.append(e.bestGlobal.fitnessValue)
         # mise à jour de la vitesse
-        [update(x, omega, c1, c2, e.bestGlobal, cut_off) for x in e.particule]
+        [update(x, omega, c1, c2, e.bestGlobal, cut_off, vmax) for x in e.particule]
 
     # on retourne les meilleures matrices pour faire des tests
     theta1 = e.bestGlobal.best[0: e.bestGlobal.theta1_size[0] * e.bestGlobal.theta1_size[1]].reshape(e.bestGlobal.theta1_size)
@@ -276,7 +277,9 @@ def plot(boolean):
     """
     n = 100
     t_max = 70
-    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean)
+    vmax = 0.3
+    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data'\
+        , t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean, vmax=vmax)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
     plt.xlabel("Itérations")
@@ -303,9 +306,11 @@ def ten_times(boolean):
     n = 30
     liste = []
     res2 = []
+    vmax = 0.3
     for x in range(10):
         print("Itération : " + str(x))
-        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401], t2=[1, 26], t_max=40, cut_off=boolean)
+        res, _, _ = main(particuleNumbers=n, xPath='X.data', yPath='Y.data', t1=[25, 401],\
+         t2=[1, 26], t_max=40, cut_off=boolean, vmax=vmax)
         liste.append(res)
 
     for ele in liste:
