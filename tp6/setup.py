@@ -8,7 +8,9 @@ ext_modules = [
     Extension("individu",
     sources=["individu.pyx"],
     libraries=["m"]
-    )
+    ),
+    Extension("population",
+    sources=["population.pyx"])
 ]
 
 setup(

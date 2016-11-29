@@ -3,7 +3,6 @@
 
 import cython
 import numpy as np
-from copy import copy
 import math
 
 cimport numpy as np
@@ -21,11 +20,6 @@ ctypedef np.double_t DOUBLE_t
 
 
 cdef class Individu:
-
-    cdef double pm
-    cdef str x
-    cdef str y
-    cdef double pc
 
     def __init__(self, str x, str y, double pm, double pc):
         if len(x) > len(y):
@@ -51,25 +45,11 @@ cdef class Individu:
     cpdef str getY(self):
         return self.y
 
-    def onePointCrossover(self):
-        if self.pc > np.random.rand():
-            x = str(self.x)
-            y = str(self.y)
-            point = np.random.randint(len(x))
+    cpdef void setX(self, str x):
+        self.x = x
 
-            tmp = copy(x[point:])
-            self.x = x[:point] + y[point:]
-            self.y = y[:point] + tmp
-
-    def midBreak(self):
-        if self.pc > np.random.rand():
-            x = str(self.x)
-            y = str(self.y)
-            point = math.floor(len(x) / 2)
-
-            tmp = copy(x[point:])
-            self.x = x[:point] + y[point:]
-            self.y = y[:point] + tmp
+    cpdef void setY(self, str y):
+        self.y = y
 
 
 cdef np.ndarray[INT_t, ndim=1] mutation(double pm, np.ndarray[INT_t, ndim=1] x):
