@@ -1,16 +1,24 @@
-#! /usr/bin/python3.5
-# -*- coding:utf-8 -*-
+#!python
+#population.pyx
+#cython: profile=True
 
 from individu cimport Individu
+from libc.stdlib cimport rand, RAND_MAX
 
 import numpy as np
 cimport numpy as np
+from libc.math cimport fmod
 
 from copy import deepcopy
 from copy import copy
-
 import math
+import time
 
+
+DOUBLE = np.double
+ctypedef np.double_t DOUBLE_t
+
+cdef double MIN = -1356.48243686
 
 def getKey(item):
     return item.callFitness()
@@ -36,20 +44,23 @@ cdef class Population:
             iter = iter - 1
 
 
-    def tournament(self, number):
-        array = np.random.randint(len(self.individus), size=5)
-        choosen = np.take(self.individus, array)
+    cdef Individu tournament(self, number):
+        cdef int i = 0
+        cdef int n = len(self.individus)
+        choosen = []
+        while(i < number):
+            i = i + 1
+            choosen.append(self.individus[<int>fmod(rand(),n)])
         sorted(choosen, key=getKey)
         return choosen[0]
 
     cpdef void selection(self, number):
-        cdef int iter = self.size
+        cdef int iter = self.size -1 
         cdef int zero = 0
-        individus = []
-        while(iter > 0):
-            individus.append(self.tournament(number))
+        individus = [0] * self.size
+        while(iter >= 0):
+            individus[iter] = self.tournament(number)
             iter = iter - 1
-
         self.individus = individus
 
     cpdef void mutation(self):
@@ -59,7 +70,6 @@ cdef class Population:
             iter = iter + 1
 
     cpdef void crossover(self, int choice):
-
         cdef int iter = 0
         if choice == 0:
             while(iter < self.size-1):
@@ -69,7 +79,7 @@ cdef class Population:
             while(iter < self.size-1):
                 midBreak(self.individus[iter], self.individus[iter + 1], self.pc)
                 iter = iter + 2
-
+    
     cdef Individu getMin(self):
         cdef int i = 0
         cdef double minimum = self.individus[0].callFitness()
@@ -81,8 +91,7 @@ cdef class Population:
             i = i + 1
         return self.individus[index]
 
-
-    cpdef Individu main(self, loop, number, choice):
+    cpdef Individu main(self, int loop, int number, int choice):
         cdef int i = 0
         while (i < loop):
             i = i + 1
@@ -91,7 +100,6 @@ cdef class Population:
             self.mutation()
         cdef Individu best = self.getMin()
         return best
-
 
 cpdef void onePointCrossover(Individu i1, Individu i2, pc):
 

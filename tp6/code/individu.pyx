@@ -1,5 +1,5 @@
-#! /usr/bin/python3.5
-# -*- coding:utf-8 -*-
+# individu.pyx
+# cython: profile=True
 
 import cython
 import numpy as np
@@ -66,8 +66,8 @@ cdef np.ndarray[INT_t, ndim=1] mutation(double pm, np.ndarray[INT_t, ndim=1] x):
 
 @cython.cdivision(True)
 cdef float fitness(int x, int y):
-    cdef double noXZero = x + 0.001
-    cdef double noYZero = y + 0.001
+    cdef double noXZero = fabs(x + 0.001)
+    cdef double noYZero = fabs(y + 0.001)
 
     return + pow(x / 1000, 512) +\
     pow(10 / noXZero, 4) +\
