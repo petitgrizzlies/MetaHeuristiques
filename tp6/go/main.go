@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 )
 
+const min float64 = -1356.4824368329596
+const posX int = 903
+const posY int = 917
+
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-	iterationOnePoint(100, 5, 0.1, 0.6, 100)
+	for i := 0; i < 100; i++ {
+		iterationOnePoint(100, 5, 0.1, 0.6, 100)
+	}
 }
 
 func iterationOnePoint(loop int, number int, pm float64, pc float64, size int) {
@@ -21,5 +24,8 @@ func iterationOnePoint(loop int, number int, pm float64, pc float64, size int) {
 		population = mutation(population)
 	}
 	best := findMin(population)
-	fmt.Println(best.Fitness())
+	if best.Fitness() == min {
+		fmt.Println("Fin min")
+	}
+	// fmt.Println(best.Fitness())
 }

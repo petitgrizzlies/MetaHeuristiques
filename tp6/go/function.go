@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type Individu struct {
@@ -44,6 +46,7 @@ func (i *Individu) Mutation() {
 }
 
 func initIndividu(pm float64, pc float64, size_population int) []Individu {
+	rand.Seed(int64(time.Now().Nanosecond()))
 	res := make([]Individu, size_population)
 	iter := size_population - 1
 	for iter >= 0 {
@@ -107,18 +110,18 @@ func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
 		new_y := string(i2.y)
 
 		if len(new_x) >= len(x) {
-			x = (len(new_x)-len(x))*"0" + x
+			x = strings.Repeat("0", len(new_x)-len(x)) + x
 		} else {
-			new_x = (len(x)-len(new_x))*"0" + new_x
+			new_x = strings.Repeat("0", len(x)-len(new_x)) + new_x
 		}
 
 		if len(new_y) >= len(y) {
-			y = (len(new_y)-len(y))*"0" + y
+			y = strings.Repeat("0", len(new_y)-len(y)) + y
 		} else {
-			new_y = (len(y)-len(new_y))*"0" + new_y
+			new_y = strings.Repeat("0", len(y)-len(new_y)) + new_y
 		}
 
-		point := rand.Intn(len(x))
+		point := int(math.Mod(float64(rand.Intn(len(x))), float64(len(x))))
 
 		tmpX := x[point:]
 		tmpY := y[point:]
@@ -128,6 +131,7 @@ func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
 
 		i2.x = new_x[:point] + tmpX
 		i2.y = new_y[:point] + tmpY
+
 	}
 }
 
@@ -140,18 +144,18 @@ func midBreak(i1 Individu, i2 Individu, pc float64) {
 		new_y := string(i2.y)
 
 		if len(new_x) >= len(x) {
-			x = (len(new_x)-len(x))*"0" + x
+			x = strings.Repeat("0", len(new_x)-len(x)) + x
 		} else {
-			new_x = (len(x)-len(new_x))*"0" + new_x
+			new_x = strings.Repeat("0", len(x)-len(new_x)) + new_x
 		}
 
 		if len(new_y) >= len(y) {
-			y = (len(new_y)-len(y))*"0" + y
+			y = strings.Repeat("0", len(new_y)-len(y)) + y
 		} else {
-			new_y = (len(y)-len(new_y))*"0" + new_y
+			new_y = strings.Repeat("0", len(y)-len(new_y)) + new_y
 		}
 
-		point := math.Floor(len(x) / 2)
+		var point int = len(x) / 2
 
 		tmpX := x[point:]
 		tmpY := y[point:]
@@ -165,7 +169,6 @@ func midBreak(i1 Individu, i2 Individu, pc float64) {
 }
 
 func crossoverOnePoint(population []Individu) []Individu {
-	res := make([]Individu, len(population))
 	pc := population[0].pc
 	i := 0
 	size := len(population) - 1
@@ -174,11 +177,10 @@ func crossoverOnePoint(population []Individu) []Individu {
 		onePointCrossOver(population[i], population[i+1], pc)
 		i += 2
 	}
-	return res
+	return population
 }
 
 func crossoverMidPoint(population []Individu) []Individu {
-	res := make([]Individu, len(population))
 	pc := population[0].pc
 	i := 0
 	size := len(population) - 1
@@ -187,5 +189,5 @@ func crossoverMidPoint(population []Individu) []Individu {
 		midBreak(population[i], population[i+1], pc)
 		i += 2
 	}
-	return res
+	return population
 }
