@@ -121,16 +121,17 @@ func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
 			new_y = strings.Repeat("0", len(y)-len(new_y)) + new_y
 		}
 
-		point := int(math.Mod(float64(rand.Intn(len(x))), float64(len(x))))
+		pointX := int(math.Mod(float64(rand.Intn(len(x))), float64(len(x))))
+		pointY := int(math.Mod(float64(rand.Intn(len(y))), float64(len(y))))
 
-		tmpX := x[point:]
-		tmpY := y[point:]
+		tmpX := x[pointX:]
+		tmpY := y[pointY:]
 
-		i1.x = x[:point] + new_x[point:]
-		i1.y = y[:point] + new_y[point:]
+		i1.x = x[:pointX] + new_x[pointX:]
+		i1.y = y[:pointY] + new_y[pointY:]
 
-		i2.x = new_x[:point] + tmpX
-		i2.y = new_y[:point] + tmpY
+		i2.x = new_x[:pointX] + tmpX
+		i2.y = new_y[:pointY] + tmpY
 
 	}
 }
@@ -155,16 +156,17 @@ func midBreak(i1 Individu, i2 Individu, pc float64) {
 			new_y = strings.Repeat("0", len(y)-len(new_y)) + new_y
 		}
 
-		var point int = len(x) / 2
+		pointX := len(x) / 2
+		pointY := len(y) / 2
 
-		tmpX := x[point:]
-		tmpY := y[point:]
+		tmpX := x[pointX:]
+		tmpY := y[pointY:]
 
-		i1.x = x[:point] + new_x[point:]
-		i1.y = y[:point] + new_y[point:]
+		i1.x = x[:pointX] + new_x[pointX:]
+		i1.y = y[:pointY] + new_y[pointY:]
 
-		i2.x = new_x[:point] + tmpX
-		i2.y = new_y[:point] + tmpY
+		i2.x = new_x[:pointX] + tmpX
+		i2.y = new_y[:pointY] + tmpY
 	}
 }
 
