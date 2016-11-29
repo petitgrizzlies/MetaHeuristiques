@@ -97,3 +97,95 @@ func mutation(population []Individu) []Individu {
 	}
 	return population
 }
+
+func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
+	if pc > rand.Float64() {
+		x := string(i1.x)
+		y := string(i1.y)
+
+		new_x := string(i2.x)
+		new_y := string(i2.y)
+
+		if len(new_x) >= len(x) {
+			x = (len(new_x)-len(x))*"0" + x
+		} else {
+			new_x = (len(x)-len(new_x))*"0" + new_x
+		}
+
+		if len(new_y) >= len(y) {
+			y = (len(new_y)-len(y))*"0" + y
+		} else {
+			new_y = (len(y)-len(new_y))*"0" + new_y
+		}
+
+		point := rand.Intn(len(x))
+
+		tmpX := x[point:]
+		tmpY := y[point:]
+
+		i1.x = x[:point] + new_x[point:]
+		i1.y = y[:point] + new_y[point:]
+
+		i2.x = new_x[:point] + tmpX
+		i2.y = new_y[:point] + tmpY
+	}
+}
+
+func midBreak(i1 Individu, i2 Individu, pc float64) {
+	if pc > rand.Float64() {
+		x := string(i1.x)
+		y := string(i1.y)
+
+		new_x := string(i2.x)
+		new_y := string(i2.y)
+
+		if len(new_x) >= len(x) {
+			x = (len(new_x)-len(x))*"0" + x
+		} else {
+			new_x = (len(x)-len(new_x))*"0" + new_x
+		}
+
+		if len(new_y) >= len(y) {
+			y = (len(new_y)-len(y))*"0" + y
+		} else {
+			new_y = (len(y)-len(new_y))*"0" + new_y
+		}
+
+		point := math.Floor(len(x) / 2)
+
+		tmpX := x[point:]
+		tmpY := y[point:]
+
+		i1.x = x[:point] + new_x[point:]
+		i1.y = y[:point] + new_y[point:]
+
+		i2.x = new_x[:point] + tmpX
+		i2.y = new_y[:point] + tmpY
+	}
+}
+
+func crossoverOnePoint(population []Individu) []Individu {
+	res := make([]Individu, len(population))
+	pc := population[0].pc
+	i := 0
+	size := len(population) - 1
+
+	for i < size {
+		onePointCrossOver(population[i], population[i+1], pc)
+		i += 2
+	}
+	return res
+}
+
+func crossoverMidPoint(population []Individu) []Individu {
+	res := make([]Individu, len(population))
+	pc := population[0].pc
+	i := 0
+	size := len(population) - 1
+
+	for i < size {
+		midBreak(population[i], population[i+1], pc)
+		i += 2
+	}
+	return res
+}
