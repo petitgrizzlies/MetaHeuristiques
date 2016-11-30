@@ -15,23 +15,46 @@ func main() {
 	bar := pb.StartNew(number)
 	for i := 0; i < number; i++ {
 		bar.Increment()
-		acc += iterationOnePoint(200, 5, 0.1, 0.6, 200)
+		acc += iterationOnePoint(100, 5, 0.1, 0.6, 300)
 	}
 	bar.FinishPrint("..........................")
 	fmt.Printf("Accuracy %f\n", (float64(acc)/float64(number))*100)
+
 }
 
 func iterationOnePoint(loop int, number int, pm float64, pc float64, size int) int {
 	population := initIndividu(pm, pc, size)
+	fitness(population)
 	i := 0
 	for i < loop {
 		i += 1
 		population = tournament(number, population)
 		population = crossoverOnePoint(population)
-		population = mutation(population)
+		mutation(population)
+		fitness(population)
 	}
 	best := findMin(population)
-	if best.Fitness() == min {
+	if best.f == min {
+		return 1
+	} else {
+		return 0
+	}
+	// fmt.Println(best.Fitness())
+}
+
+func iterationMidBreak(loop int, number int, pm float64, pc float64, size int) int {
+	population := initIndividu(pm, pc, size)
+	fitness(population)
+	i := 0
+	for i < loop {
+		i += 1
+		population = tournament(number, population)
+		population = crossoverMidPoint(population)
+		mutation(population)
+		fitness(population)
+	}
+	best := findMin(population)
+	if best.f == min {
 		return 1
 	} else {
 		return 0

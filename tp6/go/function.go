@@ -9,18 +9,17 @@ import (
 )
 
 type Individu struct {
-	x, y   string
-	pm, pc float64
+	x, y      string
+	pm, pc, f float64
 }
 
-func (i Individu) Fitness() float64 {
+func (i *Individu) Fitness() {
 	tmp_x, _ := strconv.ParseInt(i.x, 2, 32)
 	tmp_y, _ := strconv.ParseInt(i.y, 2, 32)
 	x := float64(tmp_x) + 0.01
 	y := float64(tmp_y) + 0.01
 
-	res := math.Pow(x/1000, 512) + math.Pow(10/x, 4) + math.Pow(y/1000, 512) + math.Pow(10/y, 4) - math.Abs(0.5*x*math.Sin(math.Sqrt(math.Abs(x)))) - math.Abs(y*math.Sin(30*math.Sqrt(math.Abs(x/y))))
-	return res
+	i.f = math.Pow(x/1000, 512) + math.Pow(10/x, 4) + math.Pow(y/1000, 512) + math.Pow(10/y, 4) - math.Abs(0.5*x*math.Sin(math.Sqrt(math.Abs(x)))) - math.Abs(y*math.Sin(30*math.Sqrt(math.Abs(x/y))))
 }
 
 func (i *Individu) Mutation() {
@@ -52,19 +51,19 @@ func initIndividu(pm float64, pc float64, size_population int) []Individu {
 	for iter >= 0 {
 		x := int64(10 + rand.Intn(991))
 		y := int64(10 + rand.Intn(991))
-		res[iter] = Individu{strconv.FormatInt(x, 2), strconv.FormatInt(y, 2), pm, pc}
+		res[iter] = Individu{strconv.FormatInt(x, 2), strconv.FormatInt(y, 2), pm, pc, 0}
 		iter -= 1
 	}
 	return res
 }
 
 func findMin(population []Individu) Individu {
-	min := population[0].Fitness()
+	min := population[0].f
 	index := 0
 	iter := 1
 	for iter < len(population) {
-		if min > population[iter].Fitness() {
-			min = population[iter].Fitness()
+		if min > population[iter].f {
+			min = population[iter].f
 			index = iter
 		}
 		iter += 1
@@ -94,11 +93,16 @@ func tournament(number int, population []Individu) []Individu {
 	return res
 }
 
-func mutation(population []Individu) []Individu {
+func mutation(population []Individu) {
 	for index, _ := range population {
 		population[index].Mutation()
 	}
-	return population
+}
+
+func fitness(population []Individu) {
+	for index, _ := range population {
+		population[index].Fitness()
+	}
 }
 
 func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
