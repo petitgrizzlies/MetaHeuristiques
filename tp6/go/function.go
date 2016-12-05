@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -71,7 +72,7 @@ func findMin(population []Individu) Individu {
 	return population[index]
 }
 
-func tournament(number int, population []Individu) []Individu {
+func tournament(number int, population []Individu) {
 	res := make([]Individu, len(population))
 
 	i := 0
@@ -90,7 +91,9 @@ func tournament(number int, population []Individu) []Individu {
 		i = 0
 		iter += 1
 	}
-	return res
+	for index, _ := range population {
+		population[index] = res[index]
+	}
 }
 
 func mutation(population []Individu) {
@@ -99,48 +102,34 @@ func mutation(population []Individu) {
 	}
 }
 
-func fitness(population []Individu) {
+func parallelFitness(population []Individu, n int) {
+	pas := len(population) / n
+	var vg sync.WaitGroup
+	vg.Add(n)
+	for i := 0; i < n; i++ {
+		go fitness(population[i*pas:(i+1)*pas], &vg)
+	}
+	vg.Wait()
+}
+
+func fitness(population []Individu, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for index, _ := range population {
 		population[index].Fitness()
 	}
 }
 
-func onePointCrossOver(i1 Individu, i2 Individu, pc float64) {
-	if pc > rand.Float64() {
-		x := string(i1.x)
-		y := string(i1.y)
-
-		new_x := string(i2.x)
-		new_y := string(i2.y)
-
-		if len(new_x) >= len(x) {
-			x = strings.Repeat("0", len(new_x)-len(x)) + x
-		} else {
-			new_x = strings.Repeat("0", len(x)-len(new_x)) + new_x
-		}
-
-		if len(new_y) >= len(y) {
-			y = strings.Repeat("0", len(new_y)-len(y)) + y
-		} else {
-			new_y = strings.Repeat("0", len(y)-len(new_y)) + new_y
-		}
-
-		pointX := int(math.Mod(float64(rand.Intn(len(x))), float64(len(x))))
-		pointY := int(math.Mod(float64(rand.Intn(len(y))), float64(len(y))))
-
-		tmpX := x[pointX:]
-		tmpY := y[pointY:]
-
-		i1.x = x[:pointX] + new_x[pointX:]
-		i1.y = y[:pointY] + new_y[pointY:]
-
-		i2.x = new_x[:pointX] + tmpX
-		i2.y = new_y[:pointY] + tmpY
-
+func parallelMidPoint(population []Individu, n int) {
+	pas := len(population) / n
+	var vg sync.WaitGroup
+	vg.Add(n)
+	for i := 0; i < n; i++ {
+		go crossoverMidPoint(population[i*pas:(i+1)*pas], &vg)
 	}
+	vg.Wait()
 }
 
-func midBreak(i1 Individu, i2 Individu, pc float64) {
+func midBreak(i1 *Individu, i2 *Individu, pc float64) {
 	if pc > rand.Float64() {
 		x := string(i1.x)
 		y := string(i1.y)
@@ -174,26 +163,12 @@ func midBreak(i1 Individu, i2 Individu, pc float64) {
 	}
 }
 
-func crossoverOnePoint(population []Individu) []Individu {
+func crossoverMidPoint(population []Individu, vg *sync.WaitGroup) {
+	defer vg.Done()
 	pc := population[0].pc
-	i := 0
 	size := len(population) - 1
 
-	for i < size {
-		onePointCrossOver(population[i], population[i+1], pc)
-		i += 2
+	for i := 0; i < size-1; i += 2 {
+		midBreak(&population[i], &population[i+1], pc)
 	}
-	return population
-}
-
-func crossoverMidPoint(population []Individu) []Individu {
-	pc := population[0].pc
-	i := 0
-	size := len(population) - 1
-
-	for i < size {
-		midBreak(population[i], population[i+1], pc)
-		i += 2
-	}
-	return population
 }
