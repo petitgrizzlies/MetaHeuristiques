@@ -278,8 +278,8 @@ def plot(boolean):
     n = 100
     t_max = 70
     vmax = 0.3
-    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data'\
-        , t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean, vmax=vmax)
+    res, theta1, theta2 = main(particuleNumbers=n, xPath='X.data', yPath='Y.data',\
+        t1=[25, 401], t2=[1, 26], t_max=t_max, cut_off=boolean, vmax=vmax)
     plt.plot(res, label="Fitness")
     plt.ylabel("$J(\Theta^{(1)},\Theta^{(2)})$")
     plt.xlabel("Itérations")
