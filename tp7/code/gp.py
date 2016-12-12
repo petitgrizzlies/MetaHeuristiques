@@ -3,6 +3,7 @@
 
 import random
 from copy import copy, deepcopy
+import tqdm
 
 
 class PROG:
@@ -212,3 +213,11 @@ if __name__ == '__main__':
     res = genetique(dataSet, functionSet, terminalSet, pm, pc, 20, 100)
     print("resultat : ", res.prog)
     print("fitness(resultat) = ", computeFitness(res.prog, cpu, dataSet))
+
+    # loop
+    # best = []
+    # for ele in tqdm.tqdm(range(100)):
+    #     tmp = genetique(dataSet, functionSet, terminalSet, pm, pc, 20, 100)
+    #     best.append([tmp.fitness, tmp.prog])
+    # best.sort()
+    # print(best[-1])
