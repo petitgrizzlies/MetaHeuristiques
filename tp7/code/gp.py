@@ -2,6 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import random
+from copy import copy, deepcopy
+
+
+class PROG:
+    def __init__(self, progLength, functionSet, terminalSet, dataSet, cpu):
+        self.prog = randomProg(progLength, functionSet, terminalSet)
+        self.fitness = computeFitness(self.prog, cpu, dataSet)
+
+    def __len__(self):
+        return len(self.prog)
+
+    def computeFitness(self, cpu, dataSet):
+        self.fitness = computeFitness(self.prog, cpu, dataSet)
 
 
 # This is the machine on which programs are executed
@@ -82,7 +95,7 @@ def execute(program, cpu, data):
     try:
         res = cpu.pile[-1]
     except IndexError:
-        res = 0
+        res = -1
     cpu.reset()
     return res
 
@@ -111,14 +124,12 @@ def computeFitness(prog, cpu, dataSet):
 
 # Selection using 2-tournament.
 def selection(Population, cpu, dataSet):
-    listOfFitness = [(i, computeFitness(prog, cpu, dataSet)) for i, prog in enumerate(Population)]
-
     newPopulation = []
     n = len(Population)
     for i in range(n):
         i1 = random.randint(0, n - 1)
         i2 = random.randint(0, n - 1)
-        if listOfFitness[i1][1] > listOfFitness[i2][1]:
+        if Population[i1].fitness > Population[i2].fitness:
             newPopulation.append(Population[i1])
         else:
             newPopulation.append(Population[i2])
@@ -130,19 +141,25 @@ def crossover(Population, p_c):
     n = len(Population)
     i = 0
     while(i < n):
-        p1 = Population[i]
-        p2 = Population[(i + 1) % n]
+        p1 = deepcopy(Population[i])
+        p2 = deepcopy(Population[(i + 1) % n])
         m = len(p1)
         if random.random() < p_c:  # crossover
             k = random.randint(1, m - 1)
-            newP1 = p1[0:k] + p2[k:m]
-            newP2 = p2[0:k] + p1[k:m]
-            p1 = newP1
-            p2 = newP2
+            newP1 = p1.prog[0:k] + p2.prog[k:m]
+            newP2 = p2.prog[0:k] + p1.prog[k:m]
+            p1.prog = copy(newP1)
+            p2.prog = copy(newP2)
         newPopulation.append(p1)
         newPopulation.append(p2)
         i += 2
     return newPopulation
+
+
+def fitness(population, cpu, dataSet):
+    for ele in population:
+        ele.computeFitness(cpu, dataSet)
+    return population
 
 
 def mutation(Population, p_m, terminalSet, functionSet):
@@ -154,28 +171,24 @@ def mutation(Population, p_m, terminalSet, functionSet):
             if random.random() > p_m:
                 continue
             if random.random() < 0.5:
-                p[i] = terminalSet[random.randint(0, nT)]
+                p.prog[i] = terminalSet[random.randint(0, nT)]
             else:
-                p[i] = functionSet[random.randint(0, nF)]
-        newPopulation.append(p)
+                p.prog[i] = functionSet[random.randint(0, nF)]
+        newPopulation.append(deepcopy(p))
     return newPopulation
 
 
 def genetique(dataSet, functionSet, terminalSet, pm, pc, size, loop):
     cpu = CPU()
     progLength = 6
-    population = [randomProg(progLength, functionSet, terminalSet) for x in range(size)]
-    try:
-        while loop > 0:
-            population = selection(population, cpu, dataSet)
-            population = crossover(population, pc)
-            population = mutation(population, pc, terminalSet, functionSet)
-            loop -= 1
-    except IndexError:
-        print(loop)
-        print(dataSet)
-        print(population)
-    res = [computeFitness(x, cpu, dataSet) for x in population]
+    population = [PROG(progLength, functionSet, terminalSet, dataSet, cpu) for x in range(size)]
+    while loop > 0:
+        population = selection(population, cpu, dataSet)
+        population = crossover(population, pc)
+        population = mutation(population, pc, terminalSet, functionSet)
+        population = fitness(population, cpu, dataSet)
+        loop -= 1
+    res = [computeFitness(x.prog, cpu, dataSet) for x in population]
     return population[res.index(max(res))]
 
 # -------------------------------------
@@ -184,10 +197,10 @@ def genetique(dataSet, functionSet, terminalSet, pm, pc, size, loop):
 if __name__ == '__main__':
     nbVar = 4
     cpu = CPU()
-    dataSet = [[0, 0, 0, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 1, 0],\
-     [0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 1, 1, 0, 0], [0, 1, 1, 1, 1],\
-     [1, 0, 0, 0, 0], [1, 0, 0, 1, 1], [1, 0, 1, 0, 0], [1, 0, 1, 1, 0],\
-     [1, 1, 0, 0, 0], [1, 1, 0, 1, 0], [1, 1, 1, 0, 0], [1, 1, 1, 1, 0]]
+    dataSet = [[0, 0, 0, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 1, 1, 0, 0], [0, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0], [1, 0, 0, 1, 1], [1, 0, 1, 0, 0], [1, 0, 1, 1, 0],
+    [1, 1, 0, 0, 0], [1, 1, 0, 1, 0], [1, 1, 1, 0, 0], [1, 1, 1, 1, 0]]
     for ele in dataSet:
         print(ele)
 
@@ -197,5 +210,5 @@ if __name__ == '__main__':
     functionSet = ["AND", "OR", "NOT", "XOR"]
     terminalSet = ["X1", "X2", "X3", "X4"]
     res = genetique(dataSet, functionSet, terminalSet, pm, pc, 20, 100)
-    print("resultat : ", res)
-    print("fitness(resultat) = ", computeFitness(res, cpu, dataSet))
+    print("resultat : ", res.prog)
+    print("fitness(resultat) = ", computeFitness(res.prog, cpu, dataSet))
