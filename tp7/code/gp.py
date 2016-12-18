@@ -3,7 +3,8 @@
 
 import random
 from copy import copy, deepcopy
-import tqdm
+import numpy as np
+# import tqdm
 
 
 class PROG:
@@ -89,10 +90,29 @@ def X4(cpu, data):
 
 
 # Execute a program
+
+# @profile
 def execute(program, cpu, data):
     # TO DO
     for ele in program:
-        eval(ele)(cpu, data)
+        # eval(ele)(cpu, data)
+        # if ele == "AND":
+        #     AND(cpu, data)
+        # elif ele == "OR":
+        #     OR(cpu, data)
+        # elif ele == "XOR":
+        #     XOR(cpu, data)
+        # elif ele == "NOT":
+        #     NOT(cpu, data)
+        # elif ele == "X1":
+        #     X1(cpu, data)
+        # elif ele == "X2":
+        #     X2(cpu, data)
+        # elif ele == "X3":
+        #     X3(cpu, data)
+        # elif ele == "X4":
+        #     X4(cpu, data)
+        tab[ele](cpu, data)
     try:
         res = cpu.pile[-1]
     except IndexError:
@@ -123,17 +143,14 @@ def computeFitness(prog, cpu, dataSet):
     return (sum([1 if x[-1] == execute(prog, cpu, x) else 0 for x in dataSet]))
 
 
-# Selection using 2-tournament.
-def selection(Population, cpu, dataSet):
+def selection(Population, cpu, dataSet, size):
     newPopulation = []
     n = len(Population)
     for i in range(n):
-        i1 = random.randint(0, n - 1)
-        i2 = random.randint(0, n - 1)
-        if Population[i1].fitness > Population[i2].fitness:
-            newPopulation.append(Population[i1])
-        else:
-            newPopulation.append(Population[i2])
+        indexs = np.random.randint(n, size=size)
+        tmp = [[Population[index].fitness, index] for index in indexs]
+        _, index = max(tmp)
+        newPopulation.append(deepcopy(Population[index]))
     return newPopulation
 
 
@@ -141,12 +158,14 @@ def crossover(Population, p_c):
     newPopulation = []
     n = len(Population)
     i = 0
+    randomOne = random.random
+    randomTwo = random.randint
     while(i < n):
         p1 = deepcopy(Population[i])
         p2 = deepcopy(Population[(i + 1) % n])
         m = len(p1)
-        if random.random() < p_c:  # crossover
-            k = random.randint(1, m - 1)
+        if randomOne() < p_c:  # crossover
+            k = randomTwo(1, m - 1)
             newP1 = p1.prog[0:k] + p2.prog[k:m]
             newP2 = p2.prog[0:k] + p1.prog[k:m]
             p1.prog = copy(newP1)
@@ -167,24 +186,26 @@ def mutation(Population, p_m, terminalSet, functionSet):
     newPopulation = []
     nT = len(terminalSet) - 1
     nF = len(functionSet) - 1
+    randomOne = random.random
+    randomTwo = random.randint
     for p in Population:
         for i in range(len(p)):
-            if random.random() > p_m:
+            if randomOne() > p_m:
                 continue
-            if random.random() < 0.5:
-                p.prog[i] = terminalSet[random.randint(0, nT)]
+            if randomOne() < 0.5:
+                p.prog[i] = terminalSet[randomTwo(0, nT)]
             else:
-                p.prog[i] = functionSet[random.randint(0, nF)]
+                p.prog[i] = functionSet[randomTwo(0, nF)]
         newPopulation.append(deepcopy(p))
     return newPopulation
 
 
-def genetique(dataSet, functionSet, terminalSet, pm, pc, size, loop):
+def genetique(dataSet, functionSet, terminalSet, tournament, pm, pc, size, loop):
     cpu = CPU()
-    progLength = 6
+    progLength = 8
     population = [PROG(progLength, functionSet, terminalSet, dataSet, cpu) for x in range(size)]
     while loop > 0:
-        population = selection(population, cpu, dataSet)
+        population = selection(population, cpu, dataSet, tournament)
         population = crossover(population, pc)
         population = mutation(population, pc, terminalSet, functionSet)
         population = fitness(population, cpu, dataSet)
@@ -196,12 +217,28 @@ def genetique(dataSet, functionSet, terminalSet, pm, pc, size, loop):
 
 # LOOK-UP TABLE YOU HAVE TO REPRODUCE.
 if __name__ == '__main__':
-    nbVar = 4
+    global tab
+    tab = {
+        "AND": AND,
+        "OR": OR,
+        "XOR": XOR,
+        "NOT": NOT,
+        "X1": X1,
+        "X2": X2,
+        "X3": X3,
+        "X4": X4
+    }
+
     cpu = CPU()
     dataSet = [[0, 0, 0, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 1, 0],
     [0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 1, 1, 0, 0], [0, 1, 1, 1, 1],
     [1, 0, 0, 0, 0], [1, 0, 0, 1, 1], [1, 0, 1, 0, 0], [1, 0, 1, 1, 0],
     [1, 1, 0, 0, 0], [1, 1, 0, 1, 0], [1, 1, 1, 0, 0], [1, 1, 1, 1, 0]]
+
+    # dataSet = [[0, 0, 0, 0, 0], [0, 0, 0, 1, 0], [0, 0, 1, 0, 0], [0, 0, 1, 1, 1],
+    # [0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 1, 1, 0, 0], [0, 1, 1, 1, 1],
+    # [1, 0, 0, 0, 0], [1, 0, 0, 1, 0], [1, 0, 1, 0, 0], [1, 0, 1, 1, 1],
+    # [1, 1, 0, 0, 1], [1, 1, 0, 1, 1], [1, 1, 1, 0, 1], [1, 1, 1, 1, 0]]
     for ele in dataSet:
         print(ele)
 
@@ -210,14 +247,14 @@ if __name__ == '__main__':
     pc = 0.6
     functionSet = ["AND", "OR", "NOT", "XOR"]
     terminalSet = ["X1", "X2", "X3", "X4"]
-    res = genetique(dataSet, functionSet, terminalSet, pm, pc, 20, 100)
+    res = genetique(dataSet, functionSet, terminalSet, 5, pm, pc, 40, 200)
     print("resultat : ", res.prog)
     print("fitness(resultat) = ", computeFitness(res.prog, cpu, dataSet))
 
     # loop
     # best = []
     # for ele in tqdm.tqdm(range(100)):
-    #     tmp = genetique(dataSet, functionSet, terminalSet, pm, pc, 20, 100)
+    #     tmp = genetique(dataSet, functionSet, terminalSet, 5, pm, pc, 20, 100)
     #     best.append([tmp.fitness, tmp.prog])
     # best.sort()
     # print(best[-1])
